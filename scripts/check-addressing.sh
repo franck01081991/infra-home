@@ -21,7 +21,7 @@ addresses() {
   local iface="$2"
 
   nix eval --raw ".#nixosConfigurations.${host}.config.networking.interfaces.\"${iface}\".ipv4.addresses" \
-    --apply 'addrs: builtins.concatStringsSep "\n" (map (a: "${a.address}/${builtins.toString a.prefixLength}") addrs)'
+    --apply "addrs: builtins.concatStringsSep \"\\n\" (map (a: \"${a.address}/${builtins.toString a.prefixLength}\") addrs)"
 }
 
 expect_address() {
@@ -45,7 +45,7 @@ expect_master_flag() {
 
   local flags
   flags=$(nix eval --raw '.#nixosConfigurations.rpi4-1.config.services.k3s.extraFlags' \
-    --apply 'items: builtins.concatStringsSep "\n" items')
+    --apply "items: builtins.concatStringsSep \"\\n\" items")
 
   if [[ "$flags" != *"$flag"* ]]; then
     echo "k3s missing flag ${flag}" >&2
