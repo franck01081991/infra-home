@@ -20,8 +20,9 @@ addresses() {
   local host="$1"
   local iface="$2"
 
+  # shellcheck disable=SC2016
   nix eval --raw ".#nixosConfigurations.${host}.config.networking.interfaces.\"${iface}\".ipv4.addresses" \
-    --apply "addrs: builtins.concatStringsSep \"\\n\" (map (a: \"${a.address}/${builtins.toString a.prefixLength}\") addrs)"
+    --apply 'addrs: builtins.concatStringsSep "\n" (map (a: "${a.address}/${builtins.toString a.prefixLength}") addrs)'
 }
 
 expect_address() {
