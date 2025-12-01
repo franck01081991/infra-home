@@ -29,13 +29,15 @@ in {
           if config.networking.hostName == "rpi4-1" then "10.10.0.10"
           else if config.networking.hostName == "rpi4-2" then "10.10.0.11"
           else "10.10.0.12";
+
+        flags = [
+          "--node-ip=${nodeIP}"
+          "--tls-san=${masterIp}"
+        ]
+        ++ lib.optionals (config.networking.hostName == "rpi3a-ctl") [
+          "--node-taint=node-role.kubernetes.io/control-plane=true:NoSchedule"
+        ];
       in
-      [
-        "--node-ip=${nodeIP}"
-        "--tls-san=${masterIp}"
-      ]
-      ++ lib.optionals (config.networking.hostName == "rpi3a-ctl") [
-        "--node-taint=node-role.kubernetes.io/control-plane=true:NoSchedule"
-      ];
+      lib.concatStringsSep " " flags;
   };
 }
