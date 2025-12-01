@@ -75,7 +75,9 @@ expect_gateway() {
   local expected="$2"
 
   local gateway
-  gateway=$(nix eval --raw ".#nixosConfigurations.${host}.config.networking.defaultGateway")
+  # shellcheck disable=SC2016
+  gateway=$(nix eval --raw ".#nixosConfigurations.${host}.config.networking.defaultGateway" \
+    --apply 'gw: if builtins.isAttrs gw then gw.address else gw')
 
   if [[ "$gateway" != "$expected" ]]; then
     echo "${host} gateway mismatch: expected ${expected}, got ${gateway}" >&2
