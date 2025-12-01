@@ -124,12 +124,22 @@ jobs:
           quiet: true
 
   tfsec:
-    if: ${{ hashFiles('**/*.tf') != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Detect Terraform files
+        id: detect-tf
+        run: |
+          if git ls-files '*.tf' | grep -q .; then
+            echo "has_tf=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tf=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: tfsec
+        if: steps.detect-tf.outputs.has_tf == 'true'
         uses: aquasecurity/tfsec-action@v1.0.21
 
   promote-review:

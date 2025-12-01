@@ -62,6 +62,7 @@ Voir `docs/adr/0001-gitops-bootstrap.md` pour les décisions GitOps/approbations
 ## Cibles reproductibles
 
 - `make test` : lint (pre-commit), `nix flake check`, ShellCheck, `kubeconform`, lint Helm.
+- La CI déclenche `tfsec` uniquement si des fichiers Terraform versionnés sont présents (détection via `git ls-files '*.tf'`).
 - `make render ENV=review` : génère `dist/review.yaml` depuis `clusters/review` (idem staging/prod).
 - `make deploy ENV=staging` : rend le manifest et rappelle de pousser la branche pour déclencher Flux.
 - `nix run .#render -- --env prod` : équivalent Nix sans Make.
