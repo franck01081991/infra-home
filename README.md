@@ -25,3 +25,7 @@ Voir les fichiers NixOS et k8s pour la configuration détaillée.
 - Worker `rpi3a-ctl` : `10.10.0.12/24` (Wi-Fi `wlan0`) avec passerelle `10.10.0.1`
 
 Le script `scripts/check-addressing.sh` et le job GitHub Actions `ci` vérifient la cohérence de cet adressage (IP/VLAN, flags k3s, passerelles) via `nix flake check` + validations dédiées.
+
+## Notes matérielles (placeholders CI)
+
+Les fichiers `hosts/*/hardware-configuration.nix` importent un profil matériel minimal (`modules/hardware-placeholder.nix`) pour permettre l’évaluation Nix et la CI sans accès aux machines. Remplace ces placeholders par la sortie complète de `nixos-generate-config` sur chaque hôte avant un déploiement réel.
