@@ -1,3 +1,7 @@
-# TODO: Remplace ce fichier par celui généré par `nixos-generate-config` sur rpi3a-ctl.
-{ config, lib, pkgs, ... }: {
+# TODO: Replace with `nixos-generate-config` output from rpi3a-ctl when hardware is finalized.
+{ config, lib, pkgs, ... }:
+{
+  imports = [
+    ../../modules/hardware-placeholder.nix
+  ];
 }
