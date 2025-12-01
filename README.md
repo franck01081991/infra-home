@@ -51,6 +51,8 @@ clusters/
 ```
 
 - `clusters/base/apps/openbao` : HelmRelease + valeurs OpenBao (HA, storage, service).
+- `scripts/bootstrap-openbao.sh` : initialisation unique OpenBao (pod `openbao-0`
+  attendu Ready, unseal + root token à stocker chiffrés via SOPS/age).
 - `clusters/base/apps/external-secrets` : HelmRelease ESO + SecretStore/ExternalSecret pilotés par OpenBao.
 - `clusters/<env>/flux-system/kustomization.yaml` : Kustomization Flux avec dépendances review → staging → prod.
 - Secrets à chiffrer avec **SOPS+age** (fichiers `*.enc.yaml` attendus dans `secrets/`).

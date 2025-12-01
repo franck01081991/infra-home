@@ -9,4 +9,10 @@ par un ConfigMap. Pour appliquer une modification :
 3. Laisser la promotion review → staging → prod suivre les approbations.
 
 Le script `k8s/openbao/bootstrap-openbao.sh` reste pour l'initialisation unique
-(unseal + root token) après l'installation par Flux.
+(unseal + root token) après l'installation par Flux. Il cible **le pod stateful
+`openbao-0`** (ordinal déterministe) et attend sa condition **Ready** avant
+de lancer `bao operator init`, garantissant une initialisation reproductible.
+
+Après l'init, capture la clé d'unseal et le root token puis stocke-les **uniquement**
+dans un secret chiffré (ex: `secrets/openbao-bootstrap.enc.yaml` géré par
+SOPS+age et projeté par Flux/Argo). Ne jamais committer ces valeurs en clair.
