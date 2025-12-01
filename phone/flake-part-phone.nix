@@ -18,11 +18,11 @@ let
         #!/usr/bin/env sh
         set -e
 
-        K3S_URL="${K3S_URL:-https://10.10.0.10:6443}"
-        K3S_TOKEN="${K3S_TOKEN:-CHANGER_MOI}"
-        NODE_IP="${NODE_IP:-${device.ip}}"
-        NODE_NAME="${NODE_NAME:-${device.name}}"
-        IFACE="${IFACE:-wlan0}"
+        K3S_URL="''${K3S_URL:-https://10.10.0.10:6443}"
+        K3S_TOKEN="''${K3S_TOKEN:-CHANGER_MOI}"
+        NODE_IP="''${NODE_IP:-${device.ip}}"
+        NODE_NAME="''${NODE_NAME:-${device.name}}"
+        IFACE="''${IFACE:-wlan0}"
 
         exec k3s agent \
           --server "$K3S_URL" \
