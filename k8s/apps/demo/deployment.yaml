@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app
+  namespace: infra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-app
+  template:
+    metadata:
+      labels:
+        app: demo-app
+    spec:
+      containers:
+        - name: demo-app
+          image: nginx:stable
+          env:
+            - name: DEMO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: example-secret
+                  key: password
+          ports:
+            - containerPort: 80

@@ -1,0 +1,16 @@
+# artefacts Nix
+result
+*.drv
+.nix-defexpr/
+.nix-gcroots/
+
+# secrets potentiels (à ajuster si tu ajoutes sops plus tard)
+secrets/
+openbao-init.txt
+
+# fichiers temporaires
+*.swp
+*.swo
+*.tmp
+*.log
+.DS_Store
