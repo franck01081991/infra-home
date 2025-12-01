@@ -2,8 +2,12 @@
 
 {
   networking.wireless.enable = true;
+  networking.wireless.secretsFile = "/run/secrets/wpa_supplicant.env";
   networking.wireless.networks."WAN-4G" = {
-    psk = "motdepasse-wan";
+    # Le PSK doit être injecté au runtime via /run/secrets/wpa_supplicant.env
+    # (ex: produit par sops-nix ou un drop-in systemd). Ne jamais le mettre
+    # dans le store Nix.
+    psk = "@WAN_4G_PSK@";
     priority = 10;
   };
   networking.interfaces.wlan0.useDHCP = true;
