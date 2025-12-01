@@ -1,0 +1,14 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: infra-home
+  namespace: flux-system
+spec:
+  interval: 10m
+  ref:
+    branch: main
+  url: https://github.com/example/infra-home.git
+  ignore: |
+    # Flux applique seulement les chemins déclarés dans les Kustomizations
+    # Les fichiers de travail locaux (dist/) sont exclus.
+    dist

@@ -1,0 +1,17 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infra-home-staging
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./clusters/staging
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: infra-home
+  dependsOn:
+    - name: infra-home-review
+  postBuild:
+    substitute:
+      ENVIRONMENT: staging
