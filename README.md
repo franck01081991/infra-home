@@ -12,7 +12,9 @@ Homelab perso **entièrement Nixifié** et piloté en GitOps :
 - Code infra **déclaratif** via flake Nix + manifests FluxCD dans `clusters/*`
 
 Ce dépôt reste un PoC MSP / DevOps mais tous les déploiements passent désormais par FluxCD/Argo CD :
-les cibles `make`/`nix run` génèrent le manifest final, qu'on versionne puis que Flux applique.
+les cibles `make`/`nix run` génèrent le manifest final, qu'on versionne puis que Flux applique. La vue d'ensemble
+de l'arborescence (flake, modules, hôtes, clusters, secrets, scripts) et du flux GitOps est décrite dans
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), en complément de l'ADR [0001](docs/adr/0001-gitops-bootstrap.md).
 
 ## Plan d'adressage (INFRA VLAN 10)
 
