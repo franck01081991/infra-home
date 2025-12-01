@@ -8,8 +8,11 @@
   networking.hostName = "rpi3a-ctl";
 
   networking.wireless.enable = true;
+  networking.wireless.secretsFile = "/run/secrets/wpa_supplicant.env";
   networking.wireless.networks."INFRA-K3S" = {
-    psk = "motdepasse-infra";
+    # PSK injecté par /run/secrets/wpa_supplicant.env (ex: sops-nix, drop-in
+    # systemd). Ne pas le versionner.
+    psk = "@INFRA_K3S_PSK@";
     priority = 10;
   };
 

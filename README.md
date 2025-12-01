@@ -25,6 +25,23 @@ de l'arborescence (flake, modules, hôtes, clusters, secrets, scripts) et du flu
 
 `nix flake check` et le script `scripts/check-addressing.sh` valident la cohérence IP/VLAN, les flags k3s et les passerelles.
 
+## Provisionnement sécurisé des PSK Wi-Fi
+
+- Les modules Nix (`modules/networking-router.nix`, `hosts/rpi3a-ctl/configuration.nix`) attendent un fichier runtime
+  `/run/secrets/wpa_supplicant.env` qui fournit les variables suivantes (format `KEY=value`):
+  - `WAN_4G_PSK` pour le SSID `WAN-4G` (routeur)
+  - `INFRA_K3S_PSK` pour le SSID `INFRA-K3S` (worker k3s)
+- Ce fichier **ne doit jamais être committé** ni copié dans le store Nix. Générez-le au boot via un composant de secrets
+  (ex: `sops-nix` ou un drop-in systemd avec `LoadCredential=/run/secrets/wpa_supplicant.env:/path/chiffré`), idéalement à
+  partir d'un artefact chiffré `secrets/wpa_supplicant.env.age`.
+- Les placeholders `@WAN_4G_PSK@` et `@INFRA_K3S_PSK@` sont résolus par `networking.wireless.secretsFile` au runtime
+  uniquement; l'évaluation Nix reste idempotente et sans fuite de secret.
+- Workflow recommandé (GitOps-first):
+  1. Stocker le secret chiffré avec SOPS+age dans `secrets/wpa_supplicant.env.age` (non versionné en clair).
+  2. Ajouter un module `sops-nix` ou une unité systemd dédiée qui déchiffre vers `/run/secrets/wpa_supplicant.env` (tmpfs)
+     avant le démarrage de `wpa_supplicant`.
+  3. Laisser Flux/Argo déployer la révision Git; aucune action manuelle sur la machine.
+
 ## GitOps k3s (FluxCD/Argo CD)
 
 ```
