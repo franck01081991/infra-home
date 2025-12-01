@@ -49,5 +49,17 @@
         inherit pkgs;
         devices = phoneDevices;
       };
+
+    apps.${system}.render = {
+      type = "app";
+      program = pkgs.writeShellApplication {
+        name = "render";
+        runtimeInputs = [ pkgs.kustomize ];
+        text = ''
+          env="${ENV:-${1:-review}}"
+          "${./scripts/render-desired-state.sh}" "$env"
+        '';
+      };
+    };
   };
 }

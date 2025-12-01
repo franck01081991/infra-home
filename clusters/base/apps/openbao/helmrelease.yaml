@@ -1,0 +1,26 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: openbao
+  namespace: flux-system
+spec:
+  interval: 30m
+  releaseName: openbao
+  targetNamespace: openbao
+  chart:
+    spec:
+      chart: openbao
+      sourceRef:
+        kind: HelmRepository
+        name: openbao-charts
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: ConfigMap
+      name: openbao-values
+      valuesKey: values.yaml

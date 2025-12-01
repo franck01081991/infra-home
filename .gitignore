@@ -5,8 +5,12 @@ result
 .nix-gcroots/
 
 # secrets potentiels (à ajuster si tu ajoutes sops plus tard)
-secrets/
+secrets/*
+!secrets/README.md
 openbao-init.txt
+
+# manifests rendus localement
+dist/
 
 # fichiers temporaires
 *.swp

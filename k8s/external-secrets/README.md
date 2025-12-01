@@ -1,20 +1,9 @@
-# External Secrets Operator + OpenBao
+# External Secrets Operator + OpenBao (GitOps)
 
-## Installer ESO
+External Secrets Operator est géré par FluxCD : HelmRelease, SecretStore et
+ExternalSecret se trouvent dans `clusters/base/apps/external-secrets`.
 
-```bash
-helm repo add external-secrets https://charts.external-secrets.io
-helm repo update
+Flux applique la configuration depuis `clusters/<env>` ; utiliser `make render ENV=review`
+pour prévisualiser le manifest et pousser les changements pour déployer.
 
-kubectl create namespace external-secrets
-
-helm install external-secrets external-secrets/external-secrets \
-  -n external-secrets
-```
-
-## SecretStore & ExternalSecret
-
-```bash
-kubectl apply -f k8s/external-secrets/secretstore-openbao.yaml
-kubectl apply -f k8s/external-secrets/externalsecret-example.yaml
-```
+Les secrets doivent être chiffrés (SOPS/age ou SealedSecrets) avant d'être ajoutés au dépôt.
