@@ -36,6 +36,7 @@ in {
           };
         };
       };
+      default = { };
       description = "Utilisateur admin et ses clés.";
     };
 
