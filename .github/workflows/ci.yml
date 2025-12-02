@@ -1,7 +1,7 @@
 ---
 name: ci
 
-on:
+"on":
   pull_request: {}
   push:
     branches:
@@ -69,16 +69,19 @@ jobs:
       - name: Install kubeconform
         run: |
           set -euo pipefail
-          KUBECONFORM_URL="https://github.com/yannh/kubeconform/releases/download/\
-v0.6.7/kubeconform-linux-amd64.tar.gz"
+          KUBECONFORM_VERSION="v0.6.7"
+          KUBECONFORM_URL="https://github.com/yannh/kubeconform/"\
+          "releases/download/${KUBECONFORM_VERSION}/"\
+          "kubeconform-linux-amd64.tar.gz"
           curl -L "$KUBECONFORM_URL" | tar -xz kubeconform
           sudo mv kubeconform /usr/local/bin/
 
       - name: Validate manifests with kubeconform
         run: |
           set -euo pipefail
-          SKIP_KINDS="CustomResourceDefinition,HelmRepository,HelmRelease,GitRepository"
-          SKIP_KINDS="${SKIP_KINDS},Kustomization,Application,SecretStore,ExternalSecret"
+          SKIP_KINDS="CustomResourceDefinition,HelmRepository,HelmRelease"
+          SKIP_KINDS="${SKIP_KINDS},GitRepository,Kustomization,Application"
+          SKIP_KINDS="${SKIP_KINDS},SecretStore,ExternalSecret"
 
           for env in review staging prod; do
             kustomize build "clusters/${env}" \
@@ -99,8 +102,10 @@ v0.6.7/kubeconform-linux-amd64.tar.gz"
       - name: Lint OpenBao chart
         run: |
           set -euo pipefail
-          helm repo add openbao https://openbao.github.io/openbao-helm
-          helm repo add external-secrets https://charts.external-secrets.io
+          helm repo add openbao \
+            https://openbao.github.io/openbao-helm
+          helm repo add external-secrets \
+            https://charts.external-secrets.io
           helm pull openbao/openbao \
             --untar \
             --untardir /tmp/openbao-chart
