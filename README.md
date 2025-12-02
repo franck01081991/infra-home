@@ -70,7 +70,8 @@ Voir `docs/adr/0001-gitops-bootstrap.md` pour les décisions GitOps/approbations
 ## Cibles reproductibles
 
 - `make test` : lint (pre-commit), `nix flake check`, ShellCheck, `kubeconform`, lint Helm.
-- La CI déclenche `tfsec` uniquement si des fichiers Terraform versionnés sont présents (détection via `git ls-files '*.tf'`).
+- La CI déclenche `tfsec` (action `aquasecurity/tfsec-action@v1.0.3` épinglée) uniquement si des fichiers Terraform versionnés sont
+  présents (détection via `git ls-files '*.tf'`).
 - `checkov` s'exécute en CI sur `framework=kubernetes` avec `skip-framework=kustomize` pour éviter un bug amont sur les sorties
   multi-documents; les manifests sont ainsi scannés sans rendus kustomize dépendants de binaires externes.
 - `make render ENV=review` : génère `dist/review.yaml` depuis `clusters/review` (idem staging/prod).
