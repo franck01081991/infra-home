@@ -29,10 +29,13 @@ de l'arborescence (flake, modules, hôtes, clusters, secrets, scripts) et du flu
 Les fichiers `hosts/*/configuration.nix` n'importent plus que le matériel et déclarent les options des rôles, sans logique
 réseau ou k3s dupliquée :
 
-- `roles.router` : Wi-Fi WAN avec secrets injectés via `/run/secrets/wpa_supplicant.env` (placeholders `@WAN_4G_PSK@`).
 - `roles.k3s.masterWorker` / `roles.k3s.controlPlaneOnly` : paramètres `nodeIP`, `apiAddress`, `clusterInit`/`serverAddr` et
-  labels/taints k3s définis par hôte.
+  labels/taints k3s définis par hôte ; le token k3s est lu depuis `/etc/k3s/token` (fourni par SOPS/age ou un secret runtime) pour
+  éviter tout secret en clair.
 - `roles.hardening` : hardening SSH/sudo/journal activé partout.
+
+Le module historique `modules/k3s-common.nix` basé sur des conditions `networking.hostName` est supprimé : toutes les combinaisons
+`clusterInit`/`serverAddr` sont désormais passées en options explicites par hôte pour garder un schéma DRY et réutilisable.
 
 Les valeurs spécifiques (IP, SAN TLS, SSID/PSK placeholders) sont donc versionnées dans chaque hôte, tandis que la logique
 reste centralisée dans `modules/roles/*` pour conserver l'idempotence et le DRY.
