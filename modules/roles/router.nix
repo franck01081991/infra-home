@@ -263,9 +263,6 @@ in {
     networking.wireless.secretsFile = cfg.wirelessSecretsFile;
     networking.wireless.networks = cfg.wirelessNetworks;
 
-    networking.interfaces.${cfg.wanInterface}.useDHCP = true;
-    networking.interfaces.${cfg.lanInterface}.useDHCP = false;
-
     networking.vlans = builtins.listToAttrs (map (network: {
       name = network.iface;
       value = {
@@ -274,12 +271,18 @@ in {
       };
     }) networks);
 
-    networking.interfaces = builtins.listToAttrs (map (network: {
-      name = network.iface;
-      value = {
-        ipv4.addresses = mkAddresses network;
-      };
-    }) networks);
+    networking.interfaces = lib.mkMerge [
+      {
+        "${cfg.wanInterface}".useDHCP = true;
+        "${cfg.lanInterface}".useDHCP = false;
+      }
+      (builtins.listToAttrs (map (network: {
+        name = network.iface;
+        value = {
+          ipv4.addresses = mkAddresses network;
+        };
+      }) networks))
+    ];
 
     networking.nat = {
       enable = true;
