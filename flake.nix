@@ -15,6 +15,7 @@
       rpi4-1 = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
+          ./modules/wireless-secrets-compat.nix
           ./hosts/rpi4-1/configuration.nix
           ./modules/networking-common.nix
           ./modules/networking-router.nix
@@ -26,6 +27,7 @@
       rpi4-2 = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
+          ./modules/wireless-secrets-compat.nix
           ./hosts/rpi4-2/configuration.nix
           ./modules/networking-common.nix
           ./modules/k3s-common.nix
@@ -36,6 +38,7 @@
       rpi3a-ctl = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
+          ./modules/wireless-secrets-compat.nix
           ./hosts/rpi3a-ctl/configuration.nix
           ./modules/networking-common.nix
           ./modules/k3s-common.nix
@@ -56,7 +59,7 @@
         name = "render";
         runtimeInputs = [ pkgs.kustomize ];
         text = ''
-          env="${ENV:-${1:-review}}"
+          env="''${ENV:-''${1:-review}}"
           "${./scripts/render-desired-state.sh}" "$env"
         '';
       };

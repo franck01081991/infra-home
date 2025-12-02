@@ -26,11 +26,11 @@ let
         # K3S_TOKEN must be injected at runtime from a secret file/env var decrypted outside the Nix store
         # (e.g. SOPS+age -> /run/secrets/k3s/token). See phone/README.md for delivery details.
         TOKEN_FILE="''${K3S_TOKEN_FILE:-/run/secrets/k3s/token}"
-        if [ -z "${K3S_TOKEN:-}" ] && [ -f "$TOKEN_FILE" ]; then
+        if [ -z "''${K3S_TOKEN:-}" ] && [ -f "$TOKEN_FILE" ]; then
           K3S_TOKEN="$(cat "$TOKEN_FILE")"
         fi
 
-        if [ -z "${K3S_TOKEN:-}" ]; then
+        if [ -z "''${K3S_TOKEN:-}" ]; then
           echo "[start-k3s-agent] Missing K3S_TOKEN (set env or point K3S_TOKEN_FILE to a secret decrypted outside the Nix store)" >&2
           exit 1
         fi
