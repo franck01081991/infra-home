@@ -38,4 +38,3 @@ tools: kustomize
 
 kustomize:
 	./scripts/install-kustomize.sh
-
