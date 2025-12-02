@@ -4,6 +4,16 @@ let
 
   mkIfaceName = id: "${cfg.lanInterface}.${toString id}";
 
+  wanNetwork = {
+    priority = cfg.wan.priority;
+    psk = "@${cfg.wan.pskEnvVar}@";
+  };
+
+  wirelessNetworks = lib.mkMerge [
+    { "${cfg.wan.ssid}" = wanNetwork; }
+    cfg.wirelessAdditionalNetworks
+  ];
+
   networks = builtins.map (
     network: network // {
       iface = mkIfaceName network.id;
@@ -94,6 +104,32 @@ in {
       description = "Interface réseau externe (WAN).";
     };
 
+    wan = lib.mkOption {
+      description = "Paramètres du réseau Wi-Fi WAN (SSID et PSK injecté par secretsFile).";
+      default = {};
+      type = lib.types.submodule {
+        options = {
+          ssid = lib.mkOption {
+            type = lib.types.str;
+            default = "WAN-4G";
+            description = "SSID du Wi-Fi WAN.";
+          };
+
+          pskEnvVar = lib.mkOption {
+            type = lib.types.str;
+            default = "WAN_4G_PSK";
+            description = "Nom de la variable d'environnement contenant le PSK (dans secretsFile).";
+          };
+
+          priority = lib.mkOption {
+            type = lib.types.int;
+            default = 10;
+            description = "Priorité wpa_supplicant du réseau WAN.";
+          };
+        };
+      };
+    };
+
     lanInterface = lib.mkOption {
       type = lib.types.str;
       default = "eth0";
@@ -106,14 +142,10 @@ in {
       description = "Chemin du fichier de secrets pour wpa_supplicant.";
     };
 
-    wirelessNetworks = lib.mkOption {
+    wirelessAdditionalNetworks = lib.mkOption {
       type = lib.types.attrsOf lib.types.attrs;
-      default = {
-        "WAN-4G" = {
-          priority = 10;
-        };
-      };
-      description = "Réseaux Wi-Fi à déclarer sur l'interface WAN.";
+      default = { };
+      description = "Réseaux Wi-Fi supplémentaires à ajouter en plus du WAN (clé = SSID).";
     };
 
     vlans = lib.mkOption {
@@ -261,7 +293,7 @@ in {
   config = lib.mkIf cfg.enable {
     networking.wireless.enable = true;
     networking.wireless.secretsFile = cfg.wirelessSecretsFile;
-    networking.wireless.networks = cfg.wirelessNetworks;
+    networking.wireless.networks = wirelessNetworks;
 
     networking.vlans = builtins.listToAttrs (map (network: {
       name = network.iface;

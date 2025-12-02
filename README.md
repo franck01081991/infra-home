@@ -40,6 +40,18 @@ Le module historique `modules/k3s-common.nix` basé sur des conditions `networki
 Les valeurs spécifiques (IP, SAN TLS, SSID/PSK placeholders) sont donc versionnées dans chaque hôte, tandis que la logique
 reste centralisée dans `modules/roles/*` pour conserver l'idempotence et le DRY.
 
+## Routeur NixOS paramétrable (WAN + VLAN + firewall)
+
+- Le rôle `roles.router` génère dynamiquement les VLAN (`networking.vlans`), les adresses IP des sous-interfaces, le NAT et
+  les règles nftables à partir des options `roles.router.vlans` (mapping VLAN → CIDR → gateway) et `forwardRules`
+  (listes d’accès inter-zones et vers le WAN).
+- Le SSID WAN et le PSK sont fournis via `roles.router.wan.{ssid,pskEnvVar,priority}` ; le PSK est injecté au runtime à
+  partir de `networking.wireless.secretsFile` et n’est jamais stocké dans le store Nix.
+- `services.dnsmasq.settings.dhcp-range` et `dhcp-option` sont dérivés des VLANs : chaque élément `dhcpRange` définit la
+  plage d’adresses par zone, et `defaultGatewayIndex` sélectionne l’adresse routeur publiée comme passerelle DHCP.
+- Les flux entrants par zone se déclarent avec `ingressTcpPorts` (ports exposés sur le routeur) ; les flux inter-zones ou
+  vers le WAN se décrivent avec `forwardRules` pour construire automatiquement les chaînes nftables (`forward`).
+
 ## Provisionnement sécurisé des PSK Wi-Fi
 
 - Les modules Nix (`modules/roles/router.nix`, `hosts/rpi3a-ctl/configuration.nix`) attendent un fichier runtime
