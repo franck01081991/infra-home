@@ -1,8 +1,8 @@
 SHELL := bash
 ENV ?= review
-KUSTOMIZE ?= kustomize
+KUSTOMIZE ?= ./bin/kustomize
 
-.PHONY: test pre-commit nix-check shellcheck kubeconform helm-lint render deploy
+.PHONY: test pre-commit nix-check shellcheck kubeconform helm-lint render deploy tools kustomize
 
 test: pre-commit nix-check shellcheck kubeconform helm-lint
 
@@ -34,3 +34,8 @@ render:
 
 deploy: render
 	@echo "Manifest généré dans dist/$(ENV).yaml ; commit/push pour déclencher Flux (review→staging→prod)."
+tools: kustomize
+
+kustomize:
+	./scripts/install-kustomize.sh
+

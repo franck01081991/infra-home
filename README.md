@@ -60,6 +60,13 @@ clusters/
 
 Voir `docs/adr/0001-gitops-bootstrap.md` pour les décisions GitOps/approbations.
 
+## Dépendances locales
+
+- `scripts/install-kustomize.sh` : installe **kustomize v5.4.2** dans `./bin/` de façon idempotente (rejouable, sans sudo).
+  - Utilise des variables `KUSTOMIZE_VERSION` et `INSTALL_DIR` optionnelles pour épingler la version/emplacement.
+  - `make tools` appelle automatiquement ce script avant les lint/tests qui en dépendent.
+- Alternativement, `nix develop` fournit déjà `kustomize` via la flake pour éviter toute modification système.
+
 ## Cibles reproductibles
 
 - `make test` : lint (pre-commit), `nix flake check`, ShellCheck, `kubeconform`, lint Helm.
