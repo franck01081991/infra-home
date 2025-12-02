@@ -13,5 +13,13 @@
   ```
 - En alternative, exporter `K3S_TOKEN` dans l'environnement _sans_ l'écrire sur disque et avant d'exécuter `start-k3s-agent`.
 
+## Variables supportées par `start-k3s-agent`
+- `K3S_URL` (défaut: `https://10.10.0.10:6443`)
+- `NODE_IP` (défaut: IP de l'appareil définie dans `devices.nix`)
+- `NODE_NAME` (défaut: nom de l'appareil défini dans `devices.nix`)
+- `IFACE` (défaut: `wlan0`)
+- `K3S_TOKEN_FILE` (défaut: `/run/secrets/k3s/token`), prioritaire si `K3S_TOKEN` est vide et que le fichier existe
+- `K3S_TOKEN` (pas de défaut; doit être fourni en variable d'environnement, jamais stocké en clair dans le dépôt ou le Nix store)
+
 ## Build
 Utiliser le script `scripts/build-phones.sh` pour générer les bundles Nix (idempotent). Les secrets restent fournis au runtime uniquement.
