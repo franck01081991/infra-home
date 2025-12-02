@@ -14,3 +14,5 @@ spec:
   postBuild:
     substitute:
       ENVIRONMENT: review
+      GIT_BRANCH: main
+      GIT_URL: ssh://git@github.com/infra-home/infra-home.git

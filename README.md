@@ -35,6 +35,13 @@ Voir l'ADR [0002](docs/adr/0002-topology-datasource.md) pour la convention déta
 
 `nix flake check` et le script `scripts/check-addressing.sh` valident la cohérence IP/VLAN, les flags k3s et les passerelles.
 
+## GitOps FluxCD
+
+- La ressource `clusters/base/sources/gitrepository.yaml` pointe vers le dépôt Git via les substitutions Flux `$(GIT_URL)` et `$(GIT_BRANCH)`
+  (défaut : `ssh://git@github.com/infra-home/infra-home.git` sur la branche `main`).
+- Chaque environnement (review, staging, prod) fournit ces valeurs dans `clusters/<env>/flux-system/kustomization.yaml` pour permettre
+  le suivi d’une branche différente si besoin tout en gardant un manifest base unique.
+
 ## Rôles NixOS par hôte
 
 Les fichiers `hosts/*/configuration.nix` n'importent plus que le matériel et déclarent les options des rôles, sans logique

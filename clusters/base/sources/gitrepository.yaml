@@ -7,8 +7,8 @@ metadata:
 spec:
   interval: 10m
   ref:
-    branch: main
-  url: https://github.com/example/infra-home.git
+    branch: $(GIT_BRANCH:=main)
+  url: $(GIT_URL:=ssh://git@github.com/infra-home/infra-home.git)
   ignore: |
     # Flux applique seulement les chemins déclarés dans les Kustomizations
     # Les fichiers de travail locaux (dist/) sont exclus.
