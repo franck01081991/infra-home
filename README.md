@@ -119,20 +119,19 @@ clusters/
 
 Voir `docs/adr/0001-gitops-bootstrap.md` pour les décisions GitOps/approbations.
 
-## Dépendances locales
+## Dépendances locales et devshell Nix
 
-- `scripts/install-kustomize.sh` : installe **kustomize v5.4.2** dans `./bin/` de façon idempotente (rejouable, sans sudo).
-  - Utilise des variables `KUSTOMIZE_VERSION` et `INSTALL_DIR` optionnelles pour épingler la version/emplacement.
-  - `make tools` appelle automatiquement ce script avant les lint/tests qui en dépendent.
-- Alternativement, `nix develop` fournit déjà `kustomize` via la flake pour éviter toute modification système.
+- `nix develop .#default` fournit un environnement reproductible incluant `nixfmt`, `kubectl`, `flux`, `helm`, `age`,
+  `trufflehog`, `yamllint`, `shellcheck`, `kubeconform` et `kustomize` (fichier `nix/devshell.nix`).
+- Le script `scripts/install-kustomize.sh` reste disponible pour installer **kustomize v5.4.2** dans `./bin/` sans sudo
+  si vous n'utilisez pas Nix. Les variables `KUSTOMIZE_VERSION` et `INSTALL_DIR` permettent d'épingler la version ou le chemin.
 
 ## Cibles reproductibles
 
-- `make test` : lint (pre-commit), `nix flake check`, ShellCheck, `kubeconform`, lint Helm.
-- La CI déclenche `tfsec` (action `aquasecurity/tfsec-action@v1.0.3` épinglée) uniquement si des fichiers Terraform versionnés sont
-  présents (détection via `git ls-files '*.tf'`).
-- `checkov` s'exécute en CI sur `framework=kubernetes` avec `skip-framework=kustomize` pour éviter un bug amont sur les sorties
-  multi-documents; les manifests sont ainsi scannés sans rendus kustomize dépendants de binaires externes.
+- `nix flake check --all-systems` : valide la topologie, les modules et la configuration NixOS.
+- `pre-commit run --all-files --show-diff-on-failure` : applique `nixfmt` sur les fichiers Nix, `yamllint --strict` et `ShellCheck`
+  sur les scripts shell, puis lance `trufflehog filesystem --no-update --fail --no-history --json .` (outils fournis via `nix develop`).
+- `kustomize build clusters/<env> | kubeconform -strict --skip "CustomResourceDefinition,HelmRepository,HelmRelease,GitRepository,Kustomization,Application,SecretStore,ExternalSecret" --summary` : valide les manifestes Flux/Helm par environnement.
 - `make render ENV=review` : génère `dist/review.yaml` depuis `clusters/review` (idem staging/prod).
 - `make deploy ENV=staging` : rend le manifest et rappelle de pousser la branche pour déclencher Flux.
 - `nix run .#render -- --env prod` : équivalent Nix sans Make (la variable `ENV` peut aussi définir l'environnement, défaut `review`).
@@ -140,7 +139,15 @@ Voir `docs/adr/0001-gitops-bootstrap.md` pour les décisions GitOps/approbations
   - Sans `--ssh`, la reconstruction se fait localement; avec `--ssh`, la construction et l'application se font sur l'hôte cible.
 - `scripts/deploy-all.sh [--ssh]` : boucle sur `rpi4-1`, `rpi4-2`, `rpi3a-ctl` en appelant `scripts/deploy-rpi.sh` (idempotent, trié).
 
-Les déploiements sont protégés par approbations : promotion `review → staging → prod` via environnements GitHub.
+## CI/CD GitHub Actions
+
+- Le workflow `.github/workflows/ci.yaml` exécute :
+  - `nix flake check --all-systems` via l'action `cachix/install-nix-action@v27`.
+  - `yamllint --strict .` pour llint YAML.
+  - `kustomize build` + `kubeconform -strict` pour valider les manifestes `review`, `staging`, `prod` en ignorant les CRD/ressources Flux/ESO.
+  - Un scan secrets `trufflehog` avec `--no-update --fail --only-verified --json` pour éviter toute fuite.
+- Les déploiements GitOps restent protégés par approbations GitHub `review → staging → prod` ; chaque étape attend une validation
+  avant synchronisation via Flux.
 
 ## Notes matérielles
 
