@@ -9,23 +9,29 @@ HOSTS=(
 
 usage() {
   cat <<USAGE
-Usage: $(basename "$0") [--ssh]
+Usage: $(basename "$0") [--ssh|--local]
 
 Iterates over all Raspberry Pi hosts and calls deploy-rpi.sh.
+By default, deployments target hosts over SSH.
 
 Options:
-  --ssh       Deploy over SSH (remote build + switch on target host).
+  --ssh       Deploy over SSH (remote build + switch on target host) [default].
+  --local     Deploy locally instead of over SSH.
   -h, --help  Show this help message.
 USAGE
 }
 
 main() {
-  local use_ssh="false"
+  local use_ssh="true"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --ssh)
         use_ssh="true"
+        shift
+        ;;
+      --local)
+        use_ssh="false"
         shift
         ;;
       -h|--help)
