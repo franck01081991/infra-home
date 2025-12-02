@@ -32,7 +32,7 @@ réseau ou k3s dupliquée :
 - `roles.k3s.masterWorker` / `roles.k3s.controlPlaneOnly` : paramètres `nodeIP`, `apiAddress`, `clusterInit`/`serverAddr` et
   labels/taints k3s définis par hôte ; le token k3s est lu depuis `/etc/k3s/token` (fourni par SOPS/age ou un secret runtime) pour
   éviter tout secret en clair.
-- `roles.hardening` : hardening SSH/sudo/journal activé partout.
+- `roles.hardening` : hardening SSH/sudo/journal activé partout ; remplacez la clé publique par la vôtre (accès root ou par mot de passe refusé).
 
 Le module historique `modules/k3s-common.nix` basé sur des conditions `networking.hostName` est supprimé : toutes les combinaisons
 `clusterInit`/`serverAddr` sont désormais passées en options explicites par hôte pour garder un schéma DRY et réutilisable.
