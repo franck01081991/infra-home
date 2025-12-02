@@ -77,6 +77,9 @@ Voir `docs/adr/0001-gitops-bootstrap.md` pour les décisions GitOps/approbations
 - `make render ENV=review` : génère `dist/review.yaml` depuis `clusters/review` (idem staging/prod).
 - `make deploy ENV=staging` : rend le manifest et rappelle de pousser la branche pour déclencher Flux.
 - `nix run .#render -- --env prod` : équivalent Nix sans Make (la variable `ENV` peut aussi définir l'environnement, défaut `review`).
+- `scripts/deploy-rpi.sh [--ssh] <hostname>` : reconstruit et applique un hôte NixOS (`nixos-rebuild switch --flake .#<hostname>`).
+  - Sans `--ssh`, la reconstruction se fait localement; avec `--ssh`, la construction et l'application se font sur l'hôte cible.
+- `scripts/deploy-all.sh [--ssh]` : boucle sur `rpi4-1`, `rpi4-2`, `rpi3a-ctl` en appelant `scripts/deploy-rpi.sh` (idempotent, trié).
 
 Les déploiements sont protégés par approbations : promotion `review → staging → prod` via environnements GitHub.
 
