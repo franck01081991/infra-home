@@ -1,8 +1,13 @@
 # OpenBao dans k3s (GitOps)
 
 OpenBao est géré par FluxCD via le HelmRelease dans `clusters/base/apps/openbao`.
-Les valeurs sont stockées dans `clusters/base/apps/openbao/values.yaml` et projetées
-par un ConfigMap. Pour appliquer une modification :
+Les valeurs de déploiement sont stockées dans `clusters/base/apps/openbao/values.yaml`
+et projetées par un ConfigMap. Un fichier de référence local `k8s/openbao/values-openbao.yaml`
+reprend la configuration attendue (stockage Raft + classe `local-path`, service
+`openbao:8200`, sélection des nœuds `role=infra`) pour aligner les installations
+manuelles avec le bootstrap.
+
+Pour appliquer une modification :
 
 1. Éditer le fichier de valeurs ou le HelmRelease.
 2. `make render ENV=review` puis commit/push pour déclencher Flux.
