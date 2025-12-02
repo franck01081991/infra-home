@@ -1,0 +1,37 @@
+---
+global:
+  image:
+    repository: docker.io/openbao/openbao
+    tag: latest
+
+server:
+  ha:
+    enabled: true
+    raft:
+      enabled: true
+
+  dataStorage:
+    enabled: true
+    size: 5Gi
+    storageClass: local-path
+
+  service:
+    name: openbao
+    type: ClusterIP
+    port: 8200
+    targetPort: 8200
+
+  nodeSelector:
+    role: infra
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: role
+                operator: In
+                values:
+                  - infra
+
+  tolerations: []
