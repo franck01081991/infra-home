@@ -127,6 +127,7 @@ in {
     users.users.${adminUser.name} = {
       isNormalUser = adminUser.isNormalUser;
       extraGroups = adminUser.extraGroups;
+      # Remplacez la clé publique ci-dessous par la vôtre ; les connexions root ou par mot de passe sont désactivées.
       openssh.authorizedKeys.keys = adminUser.authorizedKeys;
     };
 
