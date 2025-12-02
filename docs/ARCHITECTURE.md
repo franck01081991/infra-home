@@ -1,24 +1,12 @@
-# Architecture et arborescence GitOps
+# ARCHITECTURE
 
-Ce dépôt regroupe la configuration NixOS et Kubernetes pilotée par FluxCD. Les dossiers sont pensés pour rester DRY vis-à-vis de l'ADR [0001 – GitOps FluxCD + approbations review → staging → prod](adr/0001-gitops-bootstrap.md) et des cibles `make`/`nix` existantes.
+Vue d'ensemble du homelab : routeur NixOS rpi4-1 (WAN 4G + VLAN INFRA/PRO/PERSO/IOT) et cluster k3s HA (rpi4-1 master/worker, rpi4-2 worker, rpi3a-ctl control-plane-only Wi-Fi, téléphones Android rootés workers ARM). FluxCD applique les manifestes `clusters/base → review → staging → prod`; OpenBao stocke les secrets runtime exposés via External Secrets Operator.
 
-## Arborescence logique
+Pour les détails opérationnels :
+- Réseau : [`docs/NETWORKING.md`](NETWORKING.md)
+- GitOps : [`docs/GITOPS.md`](GITOPS.md)
+- Secrets : [`docs/SECRETS.md`](SECRETS.md)
+- Hôtes : [`docs/HOSTS.md`](HOSTS.md)
+- Téléphones : [`docs/PHONES.md`](PHONES.md)
 
-- **Flake Nix** (`flake.nix`) : point d'entrée pour les configurations NixOS (`nixosConfigurations`) et l'app `render` utilisée par `nix run .#render`.
-- **Modules NixOS** (`modules/`) : briques réutilisables (réseau, k3s, durcissement) importées par chaque hôte.
-- **Hôtes** (`hosts/<nom>/configuration.nix`) : déclarations par machine, qui composent les modules communs ; les fichiers `hardware-configuration.nix` sont des placeholders pour la CI.
-- **Clusters Kubernetes (FluxCD)** (`clusters/`) : base commune (`clusters/base`) avec namespaces et sources Flux, puis overlays par environnement (`review`, `staging`, `prod`) déclarant les `Kustomization` Flux dépendantes.
-- **Secrets** (`secrets/`) : fichiers chiffrés attendus via SOPS+age ou SealedSecrets (jamais en clair). Les valeurs consommées par Flux doivent être rendues chiffrées avant commit. Voir `docs/SECRETS.md` pour la répartition SOPS/age ↔ OpenBao, les chemins `/run/secrets/*` et les modèles SOPS.
-- **Scripts** (`scripts/`) : automatisations idempotentes (`render-desired-state.sh` pour générer `dist/<env>.yaml`, validation d'adressage, build images téléphone, bootstrap OpenBao).
-
-## Flux GitOps (render → commit → Flux)
-
-1. **Render local** : `make render ENV=<env>` ou `nix run .#render -- --env <env>` construit l'état désiré (Kustomize) dans `dist/<env>.yaml` à partir de `clusters/<env>`.
-2. **Validation locale** : `make test` (ou équivalent Nix) applique les lint/CI locales (pre-commit, kubeconform, Helm lint, ShellCheck) pour rester aligné avec la pipeline.
-3. **Commit & PR** : les manifest rendus sont commités/poussés ; la promotion review → staging → prod suit l'ADR 0001 avec approbations obligatoires.
-4. **Reconciliation Flux** : FluxCD récupère la branche/commit, applique les Kustomization dans l'ordre des dépendances (sources communes puis overlays par environnement). Aucun `kubectl apply` manuel.
-
-## Points de vigilance DRY
-
-- Les décisions et exigences de promotion sont décrites dans `docs/adr/0001-gitops-bootstrap.md` : ce document ne les duplique pas, il les référence.
-- Les cibles reproductibles (`make render`, `make deploy`, `nix run .#render`) sont la source d'autorité pour la génération ; ne pas introduire de commandes alternatives non versionnées.
+ADR : [`docs/adr/0001-gitops-bootstrap.md`](adr/0001-gitops-bootstrap.md), [`docs/adr/0002-topology-datasource.md`](adr/0002-topology-datasource.md).
