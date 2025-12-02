@@ -38,10 +38,6 @@
     prefixLength = 24;
   }];
 
-  networking.defaultGateway = {
-    interface = "wlan0";
-  };
-
   networking.nat = {
     enable = true;
     externalInterface = "wlan0";
