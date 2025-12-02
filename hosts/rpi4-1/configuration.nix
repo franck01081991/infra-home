@@ -9,11 +9,10 @@
   roles.router = {
     enable = true;
     wirelessSecretsFile = "/run/secrets/wpa_supplicant.env";
-    wirelessNetworks = {
-      "WAN-4G" = {
-        priority = 10;
-        psk = "@WAN_4G_PSK@";
-      };
+    wan = {
+      ssid = "WAN-4G";
+      pskEnvVar = "WAN_4G_PSK";
+      priority = 10;
     };
   };
 
