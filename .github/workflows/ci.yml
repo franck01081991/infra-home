@@ -2,7 +2,7 @@
 name: ci
 
 on:
-  pull_request:
+  pull_request: {}
   push:
     branches:
       - main
@@ -69,17 +69,21 @@ jobs:
       - name: Install kubeconform
         run: |
           set -euo pipefail
-          curl -L "https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz" \
-            | tar -xz kubeconform
+          KUBECONFORM_URL="https://github.com/yannh/kubeconform/releases/download/\
+v0.6.7/kubeconform-linux-amd64.tar.gz"
+          curl -L "$KUBECONFORM_URL" | tar -xz kubeconform
           sudo mv kubeconform /usr/local/bin/
 
       - name: Validate manifests with kubeconform
         run: |
           set -euo pipefail
+          SKIP_KINDS="CustomResourceDefinition,HelmRepository,HelmRelease,GitRepository"
+          SKIP_KINDS="${SKIP_KINDS},Kustomization,Application,SecretStore,ExternalSecret"
+
           for env in review staging prod; do
-            kustomize build clusters/${env} \
+            kustomize build "clusters/${env}" \
               | kubeconform -strict \
-                --skip CustomResourceDefinition,HelmRepository,HelmRelease,GitRepository,Kustomization,Application,SecretStore,ExternalSecret \
+                --skip "${SKIP_KINDS}" \
                 --summary;
           done
 
@@ -97,8 +101,11 @@ jobs:
           set -euo pipefail
           helm repo add openbao https://openbao.github.io/openbao-helm
           helm repo add external-secrets https://charts.external-secrets.io
-          helm pull openbao/openbao --untar --untardir /tmp/openbao-chart
-          helm lint /tmp/openbao-chart/openbao -f clusters/base/apps/openbao/values.yaml
+          helm pull openbao/openbao \
+            --untar \
+            --untardir /tmp/openbao-chart
+          helm lint /tmp/openbao-chart/openbao \
+            -f clusters/base/apps/openbao/values.yaml
 
   trivy:
     runs-on: ubuntu-latest
