@@ -163,7 +163,7 @@ jobs:
 
       - name: tfsec
         if: steps.detect-tf.outputs.has_tf == 'true'
-        uses: aquasecurity/tfsec-action@v1.28.14
+        uses: aquasecurity/tfsec-action@v1.0.3
 
   promote-review:
     runs-on: ubuntu-latest
