@@ -64,7 +64,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install kustomize
-        run: sudo apt-get update && sudo apt-get install -y kustomize
+        run: |
+          set -euo pipefail
+          KUSTOMIZE_VERSION="5.3.0"
+          KUSTOMIZE_BASE="https://github.com/kubernetes-sigs/kustomize/releases"
+          KUSTOMIZE_URL="${KUSTOMIZE_BASE}/download/kustomize/v${KUSTOMIZE_VERSION}/"
+          KUSTOMIZE_URL+="kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          curl -Lo kustomize.tar.gz "${KUSTOMIZE_URL}"
+          tar -xzvf kustomize.tar.gz
+          sudo mv kustomize /usr/local/bin
 
       - name: Install kubeconform
         run: |
