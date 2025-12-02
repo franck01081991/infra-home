@@ -10,9 +10,9 @@
   networking.wireless.enable = true;
   networking.wireless.secretsFile = "/run/secrets/wpa_supplicant.env";
   networking.wireless.networks."INFRA-K3S" = {
-    # PSK injecté par /run/secrets/wpa_supplicant.env (ex: sops-nix, drop-in
-    # systemd). Ne pas le versionner.
-    psk = "@INFRA_K3S_PSK@";
+    # PSK injecté via la variable d'environnement INFRA_K3S_PSK fournie par
+    # networking.wireless.secretsFile (/run/secrets/wpa_supplicant.env). Ne pas
+    # le versionner.
     priority = 10;
   };
 
