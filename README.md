@@ -1,156 +1,41 @@
-# Infra Home – NixOS + k3s HA + VLAN + 4G + OpenBao
+# Infra Home – Homelab NixOS + k3s HA + VLAN + 4G + OpenBao
 
-Homelab perso **entièrement Nixifié** et piloté en GitOps :
+Homelab GitOps-first : routeur NixOS (rpi4-1) avec WAN 4G + cluster k3s HA (rpi4-1 master/worker, rpi4-2 worker filaire, rpi3a-ctl worker Wi-Fi) et téléphones Android rootés comme workers ARM. Réseau segmenté en VLAN (INFRA/PRO/PERSO/IOT), secrets gérés par OpenBao + External Secrets Operator, état désiré versionné (flake Nix + manifests FluxCD).
 
-- Routeur principal : `rpi4-1` sous **NixOS** (module `modules/roles/router.nix` exposé via `flake.nix`)
-- WAN via **modem 4G** (Wi-Fi)
-- Cœur de calcul : **cluster k3s HA** (rpi4-1, rpi4-2, rpi3a-ctl)
-- 3 téléphones Android **rootés** comme **workers ARM**
-- **Segmentation réseau avancée** via VLAN : INFRA / PRO / PERSO / IOT
-- **OpenBao** dans k3s pour la gestion des secrets
-- **External Secrets Operator** pour sync OpenBao → Secrets k8s
-- Code infra **déclaratif** via flake Nix + manifests FluxCD dans `clusters/*`
-
-Ce dépôt reste un PoC MSP / DevOps mais tous les déploiements passent désormais par FluxCD/Argo CD :
-les cibles `make`/`nix run` génèrent le manifest final, qu'on versionne puis que Flux applique. La vue d'ensemble
-de l'arborescence (flake, modules, hôtes, clusters, secrets, scripts) et du flux GitOps est décrite dans
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), en complément de l'ADR [0001](docs/adr/0001-gitops-bootstrap.md).
-
-## Source unique de topologie réseau et rôles
-
-- `infra/topology.nix` décrit les VLAN (ID, CIDR, adresses routeur, règles nftables/dnsmasq) **et** les rôles/IP par hôte
-  (router, k3s master/worker) utilisés pour construire les configurations.
-- `modules/topology.nix` injecte ces données en argument `_module.args.topology` pour toutes les cibles `nixosSystem` du flake
-  afin que les modules/hosts n'aient plus de valeurs IP/VLAN en dur.
-- Les fichiers `hosts/*/configuration.nix` se limitent à consommer l'entrée `topology.hosts.<hostname>` (IP, labels, clusterInit)
-  et `topology.vlans` pour rester DRY et cohérents.
-
-Voir l'ADR [0002](docs/adr/0002-topology-datasource.md) pour la convention détaillée et la gouvernance de ce fichier.
-
-## Plan d'adressage (INFRA VLAN 10)
-
-- Routeur + master k3s (`rpi4-1`) : `10.10.0.1/24` (gateway) **et** `10.10.0.10/24` (IP k3s) sur le VLAN `eth0.10`
-- Worker `rpi4-2` : `10.10.0.11/24` (VLAN `eth0.10`) avec passerelle `10.10.0.1`
-- Worker `rpi3a-ctl` : `10.10.0.12/24` (Wi-Fi `wlan0`) avec passerelle `10.10.0.1`
-
-`nix flake check` et le script `scripts/check-addressing.sh` valident la cohérence IP/VLAN, les flags k3s et les passerelles.
-
-## GitOps FluxCD
-
-- La ressource `clusters/base/sources/gitrepository.yaml` pointe vers le dépôt Git via les substitutions Flux `$(GIT_URL)` et `$(GIT_BRANCH)`
-  (défaut : `ssh://git@github.com/infra-home/infra-home.git` sur la branche `main`).
-- Chaque environnement (review, staging, prod) fournit ces valeurs dans `clusters/<env>/flux-system/kustomization.yaml` pour permettre
-  le suivi d’une branche différente si besoin tout en gardant un manifest base unique.
-
-## Rôles NixOS par hôte
-
-Les fichiers `hosts/*/configuration.nix` n'importent plus que le matériel et déclarent les options des rôles, sans logique
-réseau ou k3s dupliquée :
-
-- `roles.k3s.masterWorker` / `roles.k3s.controlPlaneOnly` : paramètres `nodeIP`, `apiAddress`, `clusterInit`/`serverAddr` et
-  labels/taints k3s définis par hôte ; le token k3s est lu depuis `/etc/k3s/token` (fourni par SOPS/age ou un secret runtime) pour
-  éviter tout secret en clair.
-- `roles.hardening` : hardening SSH/sudo/journal activé partout ; remplacez la clé publique par la vôtre (accès root ou par mot de passe refusé).
-
-Le module historique `modules/k3s-common.nix` basé sur des conditions `networking.hostName` est supprimé : toutes les combinaisons
-`clusterInit`/`serverAddr` sont désormais passées en options explicites par hôte pour garder un schéma DRY et réutilisable.
-
-Les valeurs spécifiques (IP, SAN TLS, SSID/PSK placeholders) sont donc versionnées dans chaque hôte, tandis que la logique
-reste centralisée dans `modules/roles/*` pour conserver l'idempotence et le DRY.
-
-## Routeur NixOS paramétrable (WAN + VLAN + firewall)
-
-- Le rôle `roles.router` génère dynamiquement les VLAN (`networking.vlans`), les adresses IP des sous-interfaces, le NAT et
-  les règles nftables à partir des options `roles.router.vlans` (mapping VLAN → CIDR → gateway) et `forwardRules`
-  (listes d’accès inter-zones et vers le WAN).
-- Le SSID WAN et le PSK sont fournis via `roles.router.wan.{ssid,pskEnvVar,priority}` ; le PSK est injecté au runtime à
-  partir de `networking.wireless.secretsFile` et n’est jamais stocké dans le store Nix.
-- `services.dnsmasq.settings.dhcp-range` et `dhcp-option` sont dérivés des VLANs : chaque élément `dhcpRange` définit la
-  plage d’adresses par zone, et `defaultGatewayIndex` sélectionne l’adresse routeur publiée comme passerelle DHCP.
-- Les flux entrants par zone se déclarent avec `ingressTcpPorts` (ports exposés sur le routeur) ; les flux inter-zones ou
-  vers le WAN se décrivent avec `forwardRules` pour construire automatiquement les chaînes nftables (`forward`).
-
-### Migration depuis `modules/networking-router.nix`
-
-- Le module historique `modules/networking-router.nix` est archivé (voir `docs/adr/legacy/0003-networking-router-legacy.md`) et
-  n’est plus importé par la flake.
-- Pour migrer un hôte :
-  1. Retirer l’import de `modules/networking-router.nix` dans la liste `modules` ou l’hôte concerné.
-  2. Activer `roles.router` sur le routeur (ex: `roles.router.enable = host.router;`) et passer `vlans = topology.vlans` pour
-     éviter toute duplication d’adressage.
-  3. Définir les paramètres WAN/Wi-Fi (SSID, variable du PSK, priorité) via `roles.router.wan` et le chemin `wirelessSecretsFile`
-     pour injecter le PSK au runtime.
-  4. Vérifier la cohérence réseau avec `nix flake check` et `scripts/check-addressing.sh` avant promotion GitOps.
-
-## Provisionnement sécurisé des PSK Wi-Fi
-
-- Les modules Nix (`modules/roles/router.nix`, `hosts/rpi3a-ctl/configuration.nix`) attendent un fichier runtime
-  `/run/secrets/wpa_supplicant.env` qui fournit les variables suivantes (format `KEY=value`) et est injecté
-  comme `EnvironmentFile=` de `wpa_supplicant` via `modules/wireless-secrets-compat.nix` :
-  - `WAN_4G_PSK` pour le SSID `WAN-4G` (routeur)
-  - `INFRA_K3S_PSK` pour le SSID `INFRA-K3S` (worker k3s)
-- Ce fichier **ne doit jamais être committé** ni copié dans le store Nix. Générez-le au boot via un composant de secrets
-  (ex: `sops-nix` ou un drop-in systemd avec `LoadCredential=/run/secrets/wpa_supplicant.env:/path/chiffré`), idéalement à
-  partir d'un artefact chiffré `secrets/wpa_supplicant.env.age`.
-- Les placeholders `@WAN_4G_PSK@` et `@INFRA_K3S_PSK@` sont résolus par `networking.wireless.secretsFile` au runtime
-  uniquement; l'évaluation Nix reste idempotente et sans fuite de secret.
-- Workflow recommandé (GitOps-first):
-  1. Stocker le secret chiffré avec SOPS+age dans `secrets/wpa_supplicant.env.age` (non versionné en clair).
-  2. Ajouter un module `sops-nix` ou une unité systemd dédiée qui déchiffre vers `/run/secrets/wpa_supplicant.env` (tmpfs)
-     avant le démarrage de `wpa_supplicant`.
-  3. Laisser Flux/Argo déployer la révision Git; aucune action manuelle sur la machine.
-
-## GitOps k3s (FluxCD/Argo CD)
-
-```
-clusters/
-  base/                  # Composants communs (namespaces, sources Flux, HelmReleases OpenBao/ESO)
-  review|staging|prod/   # Overlays + Kustomization Flux par environnement
+## TL;DR
+```bash
+git clone git@github.com:franck01081991/infra-home.git
+cd infra-home
+nix develop          # devshell : kubectl, flux, helm, age, linters…
+nix flake check      # valide modules et topologie
+make test            # lint/kubeconform/scans
+auth ssh rpi4-1 && scripts/deploy-rpi.sh --ssh rpi4-1  # exemple déploiement host
+make render ENV=review && make deploy ENV=review        # pipeline GitOps local
 ```
 
-- `clusters/base/apps/openbao` : HelmRelease + valeurs OpenBao (HA, storage, service).
-- Les serveurs k3s `rpi4-1` et `rpi4-2` portent le label `role=infra` via `services.k3s.extraFlags` pour accueillir OpenBao
-  conformément au `nodeSelector`/`affinity` du chart; les téléphones/agents n'héritent pas de ce label et restent exclus.
-- `scripts/bootstrap-openbao.sh` : initialisation unique OpenBao (pod `openbao-0`
-  attendu Ready, unseal + root token à stocker chiffrés via SOPS/age).
-- `clusters/base/apps/external-secrets` : HelmRelease ESO + SecretStore/ExternalSecret pilotés par OpenBao.
-- `clusters/<env>/flux-system/kustomization.yaml` : Kustomization Flux avec dépendances review → staging → prod.
-- Secrets à chiffrer avec **SOPS+age** (fichiers `*.enc.yaml` attendus dans `secrets/`).
+## Rôles des machines
+- **rpi4-1** : routeur + master/worker k3s, WAN 4G (Wi-Fi).
+- **rpi4-2** : worker k3s filaire.
+- **rpi3a-ctl** : worker k3s Wi-Fi.
+- **Téléphones Android rootés** : workers k3s ARM (SSID INFRA_K3S).
 
-Voir `docs/adr/0001-gitops-bootstrap.md` pour les décisions GitOps/approbations et
-`docs/SECRETS.md` pour la gouvernance SOPS/age vs OpenBao (chemins `/run/secrets/*`,
-SecretStore ESO, bootstrap chiffré).
+## Arborescence (extrait)
+- `flake.nix`, `nix/` : flake et devshell.
+- `modules/` : rôles NixOS (router, k3s, hardening…).
+- `hosts/<hôte>/` : configuration par machine (placeholders matériels à remplacer).
+- `infra/topology.nix` : source unique VLAN/hosts/rôles.
+- `clusters/base|review|staging|prod` : manifests FluxCD.
+- `k8s/` : manifestes legacy non appliqués par Flux (voir `docs/GITOPS.md`).
+- `scripts/` : render/deploy, bootstrap OpenBao, build téléphones.
+- `secrets/` : artefacts chiffrés SOPS/age.
+- `docs/` : guides thématiques, architecture, ADR.
 
-## Dépendances locales et devshell Nix
-
-- `nix develop .#default` fournit un environnement reproductible incluant `nixfmt`, `kubectl`, `flux`, `helm`, `age`,
-  `trufflehog`, `yamllint`, `shellcheck`, `kubeconform` et `kustomize` (fichier `nix/devshell.nix`).
-- Le script `scripts/install-kustomize.sh` reste disponible pour installer **kustomize v5.4.2** dans `./bin/` sans sudo
-  si vous n'utilisez pas Nix. Les variables `KUSTOMIZE_VERSION` et `INSTALL_DIR` permettent d'épingler la version ou le chemin.
-
-## Cibles reproductibles
-
-- `nix flake check --all-systems` : valide la topologie, les modules et la configuration NixOS.
-- `pre-commit run --all-files --show-diff-on-failure` : applique `nixfmt` sur les fichiers Nix, `yamllint --strict` et `ShellCheck`
-  sur les scripts shell, puis lance `trufflehog filesystem --no-update --fail --no-history --json .` (outils fournis via `nix develop`).
-- `kustomize build clusters/<env> | kubeconform -strict --skip "CustomResourceDefinition,HelmRepository,HelmRelease,GitRepository,Kustomization,Application,SecretStore,ExternalSecret" --summary` : valide les manifestes Flux/Helm par environnement.
-- `make render ENV=review` : génère `dist/review.yaml` depuis `clusters/review` (idem staging/prod).
-- `make deploy ENV=staging` : rend le manifest et rappelle de pousser la branche pour déclencher Flux.
-- `nix run .#render -- --env prod` : équivalent Nix sans Make (la variable `ENV` peut aussi définir l'environnement, défaut `review`).
-- `scripts/deploy-rpi.sh [--ssh] <hostname>` : reconstruit et applique un hôte NixOS (`nixos-rebuild switch --flake .#<hostname>`).
-  - Sans `--ssh`, la reconstruction se fait localement; avec `--ssh`, la construction et l'application se font sur l'hôte cible.
-- `scripts/deploy-all.sh [--ssh]` : boucle sur `rpi4-1`, `rpi4-2`, `rpi3a-ctl` en appelant `scripts/deploy-rpi.sh` (idempotent, trié).
-
-## CI/CD GitHub Actions
-
-- Le workflow `.github/workflows/ci.yaml` exécute :
-  - `nix flake check --all-systems` via l'action `cachix/install-nix-action@v27`.
-  - `yamllint --strict .` pour llint YAML.
-  - `kustomize build` + `kubeconform -strict` pour valider les manifestes `review`, `staging`, `prod` en ignorant les CRD/ressources Flux/ESO.
-  - Un scan secrets `trufflehog` avec `--no-update --fail --only-verified --json` pour éviter toute fuite.
-- Les déploiements GitOps restent protégés par approbations GitHub `review → staging → prod` ; chaque étape attend une validation
-  avant synchronisation via Flux.
-
-## Notes matérielles
-
-Les fichiers `hosts/*/hardware-configuration.nix` importent un profil matériel minimal (`modules/hardware-placeholder.nix`) pour permettre l’évaluation Nix et la CI sans accès aux machines. Remplace ces placeholders par la sortie complète de `nixos-generate-config` sur chaque hôte avant un déploiement réel.
+## Documentation
+- Quickstart : [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
+- Réseau : [`docs/NETWORKING.md`](docs/NETWORKING.md)
+- GitOps/Flux : [`docs/GITOPS.md`](docs/GITOPS.md)
+- Secrets : [`docs/SECRETS.md`](docs/SECRETS.md)
+- Hôtes : [`docs/HOSTS.md`](docs/HOSTS.md)
+- Téléphones : [`docs/PHONES.md`](docs/PHONES.md)
+- Architecture : [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- ADR : [`docs/adr/0001-gitops-bootstrap.md`](docs/adr/0001-gitops-bootstrap.md), [`docs/adr/0002-topology-datasource.md`](docs/adr/0002-topology-datasource.md)
