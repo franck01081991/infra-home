@@ -21,10 +21,16 @@
     "eth0.40" = { id = 40; interface = "eth0"; };
   };
 
-  networking.interfaces."eth0.10".ipv4.addresses = [{
-    address = "10.10.0.1";
-    prefixLength = 24;
-  }];
+  networking.interfaces."eth0.10".ipv4.addresses = [
+    {
+      address = "10.10.0.1";
+      prefixLength = 24;
+    }
+    {
+      address = "10.10.0.10";
+      prefixLength = 24;
+    }
+  ];
   networking.interfaces."eth0.20".ipv4.addresses = [{
     address = "10.20.0.1";
     prefixLength = 24;
