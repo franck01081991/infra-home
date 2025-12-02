@@ -13,6 +13,7 @@
     # PSK injecté via la variable d'environnement INFRA_K3S_PSK fournie par
     # networking.wireless.secretsFile (/run/secrets/wpa_supplicant.env). Ne pas
     # le versionner.
+    psk = "@INFRA_K3S_PSK@";
     priority = 10;
   };
 

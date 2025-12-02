@@ -7,6 +7,7 @@
     # Le PSK est injecté au runtime via la variable d'environnement WAN_4G_PSK
     # fournie par networking.wireless.secretsFile (/run/secrets/wpa_supplicant.env).
     # Ne jamais le rendre visible dans le store Nix.
+    psk = "@WAN_4G_PSK@";
     priority = 10;
   };
   networking.interfaces.wlan0.useDHCP = true;
