@@ -1,3 +1,4 @@
+---
 global:
   image:
     repository: "docker.io/openbao/openbao"
