@@ -63,6 +63,18 @@ reste centralisée dans `modules/roles/*` pour conserver l'idempotence et le DRY
 - Les flux entrants par zone se déclarent avec `ingressTcpPorts` (ports exposés sur le routeur) ; les flux inter-zones ou
   vers le WAN se décrivent avec `forwardRules` pour construire automatiquement les chaînes nftables (`forward`).
 
+### Migration depuis `modules/networking-router.nix`
+
+- Le module historique `modules/networking-router.nix` est archivé (voir `docs/adr/legacy/0003-networking-router-legacy.md`) et
+  n’est plus importé par la flake.
+- Pour migrer un hôte :
+  1. Retirer l’import de `modules/networking-router.nix` dans la liste `modules` ou l’hôte concerné.
+  2. Activer `roles.router` sur le routeur (ex: `roles.router.enable = host.router;`) et passer `vlans = topology.vlans` pour
+     éviter toute duplication d’adressage.
+  3. Définir les paramètres WAN/Wi-Fi (SSID, variable du PSK, priorité) via `roles.router.wan` et le chemin `wirelessSecretsFile`
+     pour injecter le PSK au runtime.
+  4. Vérifier la cohérence réseau avec `nix flake check` et `scripts/check-addressing.sh` avant promotion GitOps.
+
 ## Provisionnement sécurisé des PSK Wi-Fi
 
 - Les modules Nix (`modules/roles/router.nix`, `hosts/rpi3a-ctl/configuration.nix`) attendent un fichier runtime
