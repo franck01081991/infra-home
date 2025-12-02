@@ -34,6 +34,10 @@ in {
           "--node-ip=${nodeIP}"
           "--tls-san=${masterIp}"
         ]
+        ++ lib.optionals (lib.elem config.networking.hostName [ "rpi4-1" "rpi4-2" ]) [
+          "--node-label"
+          "role=infra"
+        ]
         ++ lib.optionals (config.networking.hostName == "rpi3a-ctl") [
           "--node-taint=node-role.kubernetes.io/control-plane=true:NoSchedule"
         ];

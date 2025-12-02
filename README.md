@@ -51,6 +51,8 @@ clusters/
 ```
 
 - `clusters/base/apps/openbao` : HelmRelease + valeurs OpenBao (HA, storage, service).
+- Les serveurs k3s `rpi4-1` et `rpi4-2` portent le label `role=infra` via `services.k3s.extraFlags` pour accueillir OpenBao
+  conformément au `nodeSelector`/`affinity` du chart; les téléphones/agents n'héritent pas de ce label et restent exclus.
 - `scripts/bootstrap-openbao.sh` : initialisation unique OpenBao (pod `openbao-0`
   attendu Ready, unseal + root token à stocker chiffrés via SOPS/age).
 - `clusters/base/apps/external-secrets` : HelmRelease ESO + SecretStore/ExternalSecret pilotés par OpenBao.
