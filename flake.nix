@@ -56,7 +56,7 @@
         name = "render";
         runtimeInputs = [ pkgs.kustomize ];
         text = ''
-          env="${ENV:-${1:-review}}"
+          env="''${ENV:-''${1:-review}}"
           "${./scripts/render-desired-state.sh}" "$env"
         '';
       };
