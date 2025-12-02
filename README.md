@@ -117,7 +117,9 @@ clusters/
 - `clusters/<env>/flux-system/kustomization.yaml` : Kustomization Flux avec dépendances review → staging → prod.
 - Secrets à chiffrer avec **SOPS+age** (fichiers `*.enc.yaml` attendus dans `secrets/`).
 
-Voir `docs/adr/0001-gitops-bootstrap.md` pour les décisions GitOps/approbations.
+Voir `docs/adr/0001-gitops-bootstrap.md` pour les décisions GitOps/approbations et
+`docs/SECRETS.md` pour la gouvernance SOPS/age vs OpenBao (chemins `/run/secrets/*`,
+SecretStore ESO, bootstrap chiffré).
 
 ## Dépendances locales et devshell Nix
 

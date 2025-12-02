@@ -8,7 +8,7 @@ Ce dépôt regroupe la configuration NixOS et Kubernetes pilotée par FluxCD. Le
 - **Modules NixOS** (`modules/`) : briques réutilisables (réseau, k3s, durcissement) importées par chaque hôte.
 - **Hôtes** (`hosts/<nom>/configuration.nix`) : déclarations par machine, qui composent les modules communs ; les fichiers `hardware-configuration.nix` sont des placeholders pour la CI.
 - **Clusters Kubernetes (FluxCD)** (`clusters/`) : base commune (`clusters/base`) avec namespaces et sources Flux, puis overlays par environnement (`review`, `staging`, `prod`) déclarant les `Kustomization` Flux dépendantes.
-- **Secrets** (`secrets/`) : fichiers chiffrés attendus via SOPS+age ou SealedSecrets (jamais en clair). Les valeurs consommées par Flux doivent être rendues chiffrées avant commit.
+- **Secrets** (`secrets/`) : fichiers chiffrés attendus via SOPS+age ou SealedSecrets (jamais en clair). Les valeurs consommées par Flux doivent être rendues chiffrées avant commit. Voir `docs/SECRETS.md` pour la répartition SOPS/age ↔ OpenBao, les chemins `/run/secrets/*` et les modèles SOPS.
 - **Scripts** (`scripts/`) : automatisations idempotentes (`render-desired-state.sh` pour générer `dist/<env>.yaml`, validation d'adressage, build images téléphone, bootstrap OpenBao).
 
 ## Flux GitOps (render → commit → Flux)

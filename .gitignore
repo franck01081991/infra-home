@@ -7,6 +7,8 @@ result
 # secrets potentiels (à ajuster si tu ajoutes sops plus tard)
 secrets/*
 !secrets/README.md
+!secrets/templates/
+!secrets/templates/**
 openbao-init.txt
 
 # manifests rendus localement
