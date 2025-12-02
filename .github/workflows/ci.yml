@@ -143,6 +143,8 @@ jobs:
         with:
           directory: clusters
           quiet: true
+          framework: kubernetes
+          skip-framework: kustomize
 
   tfsec:
     runs-on: ubuntu-latest
