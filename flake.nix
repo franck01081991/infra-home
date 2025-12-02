@@ -11,6 +11,13 @@
     pkgs = import nixpkgs { inherit system; };
     phoneDevices = import ./phone/devices.nix;
   in {
+    nixosModules = {
+      role-router = import ./modules/roles/router.nix;
+      role-k3s-master-worker = import ./modules/roles/k3s-master-worker.nix;
+      role-k3s-control-plane-only = import ./modules/roles/k3s-control-plane-only.nix;
+      role-hardening = import ./modules/roles/hardening.nix;
+    };
+
     nixosConfigurations = {
       rpi4-1 = nixpkgs.lib.nixosSystem {
         inherit system;
@@ -18,9 +25,22 @@
           ./modules/wireless-secrets-compat.nix
           ./hosts/rpi4-1/configuration.nix
           ./modules/networking-common.nix
-          ./modules/networking-router.nix
-          ./modules/k3s-common.nix
-          ./modules/hardening.nix
+          self.nixosModules.role-router
+          self.nixosModules.role-k3s-master-worker
+          self.nixosModules.role-hardening
+          {
+            roles.router.enable = true;
+
+            roles.k3s.masterWorker = {
+              enable = true;
+              nodeIP = "10.10.0.10";
+              apiAddress = "10.10.0.10";
+              clusterInit = true;
+              nodeLabels = [ "role=infra" ];
+            };
+
+            roles.hardening.enable = true;
+          }
         ];
       };
 
@@ -30,8 +50,19 @@
           ./modules/wireless-secrets-compat.nix
           ./hosts/rpi4-2/configuration.nix
           ./modules/networking-common.nix
-          ./modules/k3s-common.nix
-          ./modules/hardening.nix
+          self.nixosModules.role-k3s-master-worker
+          self.nixosModules.role-hardening
+          {
+            roles.k3s.masterWorker = {
+              enable = true;
+              nodeIP = "10.10.0.11";
+              apiAddress = "10.10.0.10";
+              serverAddr = "https://10.10.0.10:6443";
+              nodeLabels = [ "role=infra" ];
+            };
+
+            roles.hardening.enable = true;
+          }
         ];
       };
 
@@ -41,8 +72,18 @@
           ./modules/wireless-secrets-compat.nix
           ./hosts/rpi3a-ctl/configuration.nix
           ./modules/networking-common.nix
-          ./modules/k3s-common.nix
-          ./modules/hardening.nix
+          self.nixosModules.role-k3s-control-plane-only
+          self.nixosModules.role-hardening
+          {
+            roles.k3s.controlPlaneOnly = {
+              enable = true;
+              nodeIP = "10.10.0.12";
+              apiAddress = "10.10.0.10";
+              serverAddr = "https://10.10.0.10:6443";
+            };
+
+            roles.hardening.enable = true;
+          }
         ];
       };
     };
