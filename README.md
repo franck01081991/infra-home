@@ -24,6 +24,19 @@ de l'arborescence (flake, modules, hôtes, clusters, secrets, scripts) et du flu
 
 `nix flake check` et le script `scripts/check-addressing.sh` valident la cohérence IP/VLAN, les flags k3s et les passerelles.
 
+## Rôles NixOS par hôte
+
+Les fichiers `hosts/*/configuration.nix` n'importent plus que le matériel et déclarent les options des rôles, sans logique
+réseau ou k3s dupliquée :
+
+- `roles.router` : Wi-Fi WAN avec secrets injectés via `/run/secrets/wpa_supplicant.env` (placeholders `@WAN_4G_PSK@`).
+- `roles.k3s.masterWorker` / `roles.k3s.controlPlaneOnly` : paramètres `nodeIP`, `apiAddress`, `clusterInit`/`serverAddr` et
+  labels/taints k3s définis par hôte.
+- `roles.hardening` : hardening SSH/sudo/journal activé partout.
+
+Les valeurs spécifiques (IP, SAN TLS, SSID/PSK placeholders) sont donc versionnées dans chaque hôte, tandis que la logique
+reste centralisée dans `modules/roles/*` pour conserver l'idempotence et le DRY.
+
 ## Provisionnement sécurisé des PSK Wi-Fi
 
 - Les modules Nix (`modules/roles/router.nix`, `hosts/rpi3a-ctl/configuration.nix`) attendent un fichier runtime
