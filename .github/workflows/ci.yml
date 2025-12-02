@@ -67,7 +67,10 @@ jobs:
         run: |
           set -euo pipefail
           KUSTOMIZE_VERSION="5.3.0"
-          curl -Lo kustomize.tar.gz "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          KUSTOMIZE_BASE="https://github.com/kubernetes-sigs/kustomize/releases"
+          KUSTOMIZE_URL="${KUSTOMIZE_BASE}/download/kustomize/v${KUSTOMIZE_VERSION}/"
+          KUSTOMIZE_URL+="kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          curl -Lo kustomize.tar.gz "${KUSTOMIZE_URL}"
           tar -xzvf kustomize.tar.gz
           sudo mv kustomize /usr/local/bin
 
