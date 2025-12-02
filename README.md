@@ -2,7 +2,7 @@
 
 Homelab perso **entièrement Nixifié** et piloté en GitOps :
 
-- Routeur principal : `rpi4-1` sous **NixOS**
+- Routeur principal : `rpi4-1` sous **NixOS** (module `modules/roles/router.nix` exposé via `flake.nix`)
 - WAN via **modem 4G** (Wi-Fi)
 - Cœur de calcul : **cluster k3s HA** (rpi4-1, rpi4-2, rpi3a-ctl)
 - 3 téléphones Android **rootés** comme **workers ARM**
@@ -26,7 +26,7 @@ de l'arborescence (flake, modules, hôtes, clusters, secrets, scripts) et du flu
 
 ## Provisionnement sécurisé des PSK Wi-Fi
 
-- Les modules Nix (`modules/networking-router.nix`, `hosts/rpi3a-ctl/configuration.nix`) attendent un fichier runtime
+- Les modules Nix (`modules/roles/router.nix`, `hosts/rpi3a-ctl/configuration.nix`) attendent un fichier runtime
   `/run/secrets/wpa_supplicant.env` qui fournit les variables suivantes (format `KEY=value`) et est injecté
   comme `EnvironmentFile=` de `wpa_supplicant` via `modules/wireless-secrets-compat.nix` :
   - `WAN_4G_PSK` pour le SSID `WAN-4G` (routeur)
