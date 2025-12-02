@@ -15,4 +15,6 @@
       prefixLength = 24;
     }
   ];
+
+  networking.defaultGateway = "10.10.0.1";
 }
