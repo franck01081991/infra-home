@@ -7,3 +7,12 @@ Flux applique la configuration depuis `clusters/<env>` ; utiliser `make render E
 pour prévisualiser le manifest et pousser les changements pour déployer.
 
 Les secrets doivent être chiffrés (SOPS/age ou SealedSecrets) avant d'être ajoutés au dépôt.
+
+Pour tester en local ou partager un exemple autoportant, les manifestes suivants sont
+disponibles dans ce répertoire (hors arborescence Flux) :
+
+- `secretstore-openbao.yaml` : référence le cluster Vault OpenBao
+  (`openbao.openbao.svc.cluster.local:8200`) via le backend KV v2 monté sur `kv`.
+- `externalsecret-example.yaml` : synchronise un secret `demo-app-secret` dans le
+  namespace `infra` en lisant les champs `username` et `password` depuis
+  `kv/data/demo-app`.
