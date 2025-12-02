@@ -1,5 +1,7 @@
-{ ... }:
-{
+{ topology, ... }:
+let
+  host = topology.hosts.rpi3a-ctl;
+in {
   imports = [
     ./hardware-configuration.nix
   ];
@@ -7,10 +9,12 @@
   networking.hostName = "rpi3a-ctl";
 
   roles.k3s.controlPlaneOnly = {
-    enable = true;
-    nodeIP = "10.10.0.12";
-    apiAddress = "10.10.0.10";
-    serverAddr = "https://10.10.0.10:6443";
+    enable = host.k3s.role == "control-plane-only";
+    nodeIP = host.addresses.infra;
+    apiAddress = topology.k3s.apiAddress;
+    serverAddr = topology.k3s.serverAddr;
+    nodeLabels = host.k3s.nodeLabels;
+    nodeTaints = host.k3s.nodeTaints;
   };
 
   roles.hardening.enable = true;

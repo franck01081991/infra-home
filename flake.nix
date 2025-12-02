@@ -22,6 +22,7 @@
       rpi4-1 = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
+          ./modules/topology.nix
           ./modules/wireless-secrets-compat.nix
           ./hosts/rpi4-1/configuration.nix
           ./modules/networking-common.nix
@@ -34,6 +35,7 @@
       rpi4-2 = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
+          ./modules/topology.nix
           ./modules/wireless-secrets-compat.nix
           ./hosts/rpi4-2/configuration.nix
           ./modules/networking-common.nix
@@ -45,6 +47,7 @@
       rpi3a-ctl = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
+          ./modules/topology.nix
           ./modules/wireless-secrets-compat.nix
           ./hosts/rpi3a-ctl/configuration.nix
           ./modules/networking-common.nix

@@ -16,6 +16,17 @@ les cibles `make`/`nix run` génèrent le manifest final, qu'on versionne puis q
 de l'arborescence (flake, modules, hôtes, clusters, secrets, scripts) et du flux GitOps est décrite dans
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), en complément de l'ADR [0001](docs/adr/0001-gitops-bootstrap.md).
 
+## Source unique de topologie réseau et rôles
+
+- `infra/topology.nix` décrit les VLAN (ID, CIDR, adresses routeur, règles nftables/dnsmasq) **et** les rôles/IP par hôte
+  (router, k3s master/worker) utilisés pour construire les configurations.
+- `modules/topology.nix` injecte ces données en argument `_module.args.topology` pour toutes les cibles `nixosSystem` du flake
+  afin que les modules/hosts n'aient plus de valeurs IP/VLAN en dur.
+- Les fichiers `hosts/*/configuration.nix` se limitent à consommer l'entrée `topology.hosts.<hostname>` (IP, labels, clusterInit)
+  et `topology.vlans` pour rester DRY et cohérents.
+
+Voir l'ADR [0002](docs/adr/0002-topology-datasource.md) pour la convention détaillée et la gouvernance de ce fichier.
+
 ## Plan d'adressage (INFRA VLAN 10)
 
 - Routeur + master k3s (`rpi4-1`) : `10.10.0.1/24` (gateway) **et** `10.10.0.10/24` (IP k3s) sur le VLAN `eth0.10`
