@@ -16,3 +16,5 @@ spec:
   postBuild:
     substitute:
       ENVIRONMENT: staging
+      GIT_BRANCH: main
+      GIT_URL: ssh://git@github.com/infra-home/infra-home.git
