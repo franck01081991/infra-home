@@ -31,8 +31,13 @@ in {
 
           authorizedKeys = lib.mkOption {
             type = lib.types.listOf lib.types.str;
-            default = [ "ssh-ed25519 AAAA...cle_publique_a_remplacer..." ];
-            description = "Clés SSH autorisées.";
+            default = [ 
+              # ⚠️  IMPORTANT: Remplacez cette clé par votre clé publique SSH !
+              # Générez une clé avec: ssh-keygen -t ed25519 -C "votre.email@example.com"
+              # Puis copiez le contenu de ~/.ssh/id_ed25519.pub ici
+              "ssh-ed25519 AAAA...REMPLACEZ_PAR_VOTRE_CLE_PUBLIQUE...votre.email@example.com"
+            ];
+            description = "Clés SSH autorisées. DOIT être remplacé par votre clé publique !";
           };
         };
       };
@@ -127,7 +132,9 @@ in {
     users.users.${adminUser.name} = {
       isNormalUser = adminUser.isNormalUser;
       extraGroups = adminUser.extraGroups;
-      # Remplacez la clé publique ci-dessous par la vôtre ; les connexions root ou par mot de passe sont désactivées.
+      # ⚠️  CRITIQUE: Vous DEVEZ remplacer la clé SSH par défaut dans la configuration !
+      # Les connexions root et par mot de passe sont désactivées pour la sécurité.
+      # Voir: modules/roles/hardening.nix ligne 38 pour modifier la clé par défaut
       openssh.authorizedKeys.keys = adminUser.authorizedKeys;
     };
 

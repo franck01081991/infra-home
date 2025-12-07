@@ -1,0 +1,31 @@
+# Docker Compose pour l'environnement de développement infra-home
+# Facilite l'utilisation pour les non-utilisateurs de Nix
+
+version: '3.8'
+
+services:
+  infra-home:
+    build: .
+    container_name: infra-home-dev
+    volumes:
+      # Monter le répertoire courant dans le conteneur
+      - .:/workspace
+      # Monter les clés SSH de l'utilisateur (optionnel)
+      - ${HOME}/.ssh:/ssh-keys:ro
+      # Cache Nix persistant pour accélérer les builds
+      - nix-cache:/nix
+    environment:
+      # Configuration Git (personnalisez selon vos besoins)
+      - GIT_USER_NAME=${GIT_USER_NAME:-infra-home-user}
+      - GIT_USER_EMAIL=${GIT_USER_EMAIL:-user@infra-home.local}
+    working_dir: /workspace
+    # Garder le conteneur en vie pour les sessions interactives
+    tty: true
+    stdin_open: true
+    # Réseau host pour faciliter l'accès aux Raspberry Pi
+    network_mode: host
+
+volumes:
+  # Volume persistant pour le cache Nix
+  nix-cache:
+    driver: local

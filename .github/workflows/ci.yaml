@@ -10,6 +10,8 @@ name: ci
 env:
   KUSTOMIZE_VERSION: "5.3.0"
   KUBECONFORM_VERSION: "v0.6.7"
+  TRIVY_VERSION: "0.55.2"
+  KUBE_LINTER_VERSION: "0.6.8"
 
 permissions:
   contents: read
@@ -88,6 +90,149 @@ jobs:
                 --summary;
           done
 
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck on all shell scripts
+        run: |
+          find . -name "*.sh" -type f | while read -r script; do
+            echo "Checking $script..."
+            shellcheck "$script"
+          done
+
+  nix-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-24.05
+
+      - name: Install statix
+        run: nix profile install nixpkgs#statix
+
+      - name: Run statix (Nix linter)
+        run: statix check .
+
+      - name: Check Nix formatting
+        run: |
+          # Vérifier que tous les fichiers Nix sont bien formatés
+          find . -name "*.nix" -type f | while read -r file; do
+            echo "Checking format of $file..."
+            if ! nix fmt --check "$file" 2>/dev/null; then
+              echo "❌ $file is not properly formatted"
+              echo "Run 'nix fmt $file' to fix it"
+              exit 1
+            fi
+          done
+
+  kube-linter:
+    runs-on: ubuntu-latest
+    needs:
+      - nix-flake-check
+      - lint-yaml
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install kustomize
+        run: |
+          set -euo pipefail
+          KUSTOMIZE_BASE="https://github.com/kubernetes-sigs/kustomize/releases"
+          KUSTOMIZE_URL="${KUSTOMIZE_BASE}/download/kustomize/v${KUSTOMIZE_VERSION}/"
+          KUSTOMIZE_URL+="kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          curl -Lo kustomize.tar.gz "${KUSTOMIZE_URL}"
+          tar -xzvf kustomize.tar.gz
+          sudo mv kustomize /usr/local/bin
+
+      - name: Install kube-linter
+        run: |
+          set -euo pipefail
+          KUBE_LINTER_URL="https://github.com/stackrox/kube-linter/releases"
+          KUBE_LINTER_URL+="/download/${KUBE_LINTER_VERSION}/"
+          KUBE_LINTER_URL+="kube-linter-linux.tar.gz"
+          curl -L "$KUBE_LINTER_URL" | tar -xz
+          sudo mv kube-linter /usr/local/bin/
+
+      - name: Run kube-linter on manifests
+        run: |
+          set -euo pipefail
+          
+          # Créer un fichier de configuration kube-linter
+          cat > .kube-linter.yaml << 'EOF'
+          checks:
+            # Désactiver certains checks pour les environnements de lab
+            doNotAutoAddDefaults: false
+            exclude:
+              - "no-read-only-root-fs"  # Acceptable pour certains containers
+              - "run-as-non-root"       # Peut être nécessaire pour certains services
+              - "required-label-owner"  # Pas critique pour un homelab
+            include:
+              - "no-privileged-containers"
+              - "no-host-network"
+              - "no-host-pid"
+              - "no-host-ipc"
+              - "cpu-requirements"
+              - "memory-requirements"
+              - "security-context-non-root"
+          EOF
+          
+          for env in review staging prod; do
+            echo "🔍 Analysing $env environment with kube-linter..."
+            kustomize build "clusters/${env}" > "/tmp/manifests-${env}.yaml"
+            kube-linter lint "/tmp/manifests-${env}.yaml" --config .kube-linter.yaml
+          done
+
+  trivy-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          set -euo pipefail
+          TRIVY_URL="https://github.com/aquasecurity/trivy/releases"
+          TRIVY_URL+="/download/v${TRIVY_VERSION}/"
+          TRIVY_URL+="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl -L "$TRIVY_URL" | tar -xz
+          sudo mv trivy /usr/local/bin/
+
+      - name: Scan repository for vulnerabilities
+        run: |
+          echo "🔍 Scanning repository with Trivy..."
+          trivy fs --exit-code 1 --severity HIGH,CRITICAL .
+
+      - name: Scan Docker images (if any)
+        run: |
+          # Scanner les images Docker mentionnées dans les manifests
+          if [ -f "Dockerfile" ]; then
+            echo "🐳 Scanning Dockerfile..."
+            trivy config --exit-code 1 --severity HIGH,CRITICAL Dockerfile
+          fi
+          
+          # Scanner les images dans les manifests Kubernetes
+          echo "🔍 Extracting container images from manifests..."
+          find clusters/ -name "*.yaml" -type f | xargs grep -h "image:" | \
+            sed 's/.*image: *//g' | sed 's/["'"'"']//g' | sort -u | \
+            while read -r image; do
+              if [[ "$image" != *"<"* ]] && [[ "$image" != "" ]]; then
+                echo "🔍 Scanning image: $image"
+                trivy image --exit-code 1 --severity HIGH,CRITICAL "$image" || true
+              fi
+            done
+
   trufflehog:
     runs-on: ubuntu-latest
     steps:
@@ -103,6 +248,10 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - kubeconform
+      - shellcheck
+      - nix-lint
+      - kube-linter
+      - trivy-scan
       - trufflehog
     environment: review
     steps:
