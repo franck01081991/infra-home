@@ -48,6 +48,6 @@ let
     };
 in
   builtins.listToAttrs (map (d: {
-    name = d.name;
+    inherit (d) name;
     value = mkPhoneBundle d;
   }) devices)

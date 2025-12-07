@@ -8,13 +8,14 @@ in {
 
   networking.hostName = "rpi4-2";
 
-  roles.k3s.masterWorker = {
-    enable = host.k3s.role == "master-worker";
-    nodeIP = host.addresses.infra;
-    apiAddress = topology.k3s.apiAddress;
-    serverAddr = topology.k3s.serverAddr;
-    nodeLabels = host.k3s.nodeLabels;
-  };
+  roles = {
+    k3s.masterWorker = {
+      enable = host.k3s.role == "master-worker";
+      nodeIP = host.addresses.infra;
+      inherit (topology.k3s) apiAddress serverAddr;
+      inherit (host.k3s) nodeLabels;
+    };
 
-  roles.hardening.enable = true;
+    hardening.enable = true;
+  };
 }

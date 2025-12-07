@@ -1,6 +1,7 @@
 # Docker Compose pour l'environnement de développement infra-home
 # Facilite l'utilisation pour les non-utilisateurs de Nix
 
+---
 version: '3.8'
 
 services:

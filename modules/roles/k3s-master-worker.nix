@@ -77,10 +77,8 @@ in {
     services.k3s = {
       enable = true;
       package = pkgs.k3s;
-      tokenFile = cfg.tokenFile;
+      inherit (cfg) tokenFile clusterInit;
       role = "server";
-
-      clusterInit = cfg.clusterInit;
 
       serverAddr = lib.mkIf (!cfg.clusterInit && cfg.serverAddr != null) cfg.serverAddr;
 

@@ -71,11 +71,10 @@ in {
     services.k3s = {
       enable = true;
       package = pkgs.k3s;
-      tokenFile = cfg.tokenFile;
+      inherit (cfg) tokenFile serverAddr;
       role = "server";
 
       clusterInit = false;
-      serverAddr = cfg.serverAddr;
 
       extraFlags = lib.concatStringsSep " " extraArgs;
     };

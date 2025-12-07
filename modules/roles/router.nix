@@ -5,7 +5,7 @@ let
   mkIfaceName = id: "${cfg.lanInterface}.${toString id}";
 
   wanNetwork = {
-    priority = cfg.wan.priority;
+    inherit (cfg.wan) priority;
     psk = "@${cfg.wan.pskEnvVar}@";
   };
 
@@ -21,13 +21,13 @@ let
   ) cfg.vlans;
 
   vlansByName = builtins.listToAttrs (map (n: {
-    name = n.name;
+    inherit (n) name;
     value = n;
   }) networks);
 
   mkForwardRule = source: rule:
     let
-      targetInterface = if rule.target == "wan" then cfg.wanInterface else (vlansByName.${rule.target}).iface;
+      targetInterface = if rule.target == "wan" then cfg.wanInterface else vlansByName.${rule.target}.iface;
       tcpPorts = lib.concatStringsSep "," (map toString rule.tcpPorts);
       udpPorts = lib.concatStringsSep "," (map toString rule.udpPorts);
       tcpCondition = lib.optionalString (rule.tcpPorts != []) " tcp dport { ${tcpPorts} }";
@@ -291,35 +291,39 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    networking.wireless.enable = true;
-    networking.wireless.secretsFile = cfg.wirelessSecretsFile;
-    networking.wireless.networks = wirelessNetworks;
-
-    networking.vlans = builtins.listToAttrs (map (network: {
-      name = network.iface;
-      value = {
-        id = network.id;
-        interface = cfg.lanInterface;
+    networking = {
+      wireless = {
+        enable = true;
+        secretsFile = cfg.wirelessSecretsFile;
+        networks = wirelessNetworks;
       };
-    }) networks);
 
-    networking.interfaces = lib.mkMerge [
-      {
-        "${cfg.wanInterface}".useDHCP = true;
-        "${cfg.lanInterface}".useDHCP = false;
-      }
-      (builtins.listToAttrs (map (network: {
+      vlans = builtins.listToAttrs (map (network: {
         name = network.iface;
         value = {
-          ipv4.addresses = mkAddresses network;
+          inherit (network) id;
+          interface = cfg.lanInterface;
         };
-      }) networks))
-    ];
+      }) networks);
 
-    networking.nat = {
-      enable = true;
-      externalInterface = cfg.wanInterface;
-      internalInterfaces = vlanInterfaces;
+      interfaces = lib.mkMerge [
+        {
+          "${cfg.wanInterface}".useDHCP = true;
+          "${cfg.lanInterface}".useDHCP = false;
+        }
+        (builtins.listToAttrs (map (network: {
+          name = network.iface;
+          value = {
+            ipv4.addresses = mkAddresses network;
+          };
+        }) networks))
+      ];
+
+      nat = {
+        enable = true;
+        externalInterface = cfg.wanInterface;
+        internalInterfaces = vlanInterfaces;
+      };
     };
 
     services.dnsmasq = {

@@ -5,7 +5,7 @@ let
   topology = import ../infra/topology.nix;
   
   # Fonctions d'aide pour la validation
-  lib = pkgs.lib;
+  inherit (pkgs) lib;
   
   # Test que tous les VLANs ont des IDs uniques
   testUniqueVlanIds = 
@@ -45,7 +45,7 @@ let
   # Test que tous les hôtes ont les champs requis
   testHostsConfig =
     let
-      hosts = topology.hosts;
+      inherit (topology) hosts;
       # Récupération dynamique des noms d'hôtes pour la scalabilité
       hostNames = lib.attrNames hosts;
       
@@ -73,7 +73,7 @@ let
       hostNames = lib.attrNames hosts;
       
       # Compter les routeurs
-      routerCount = lib.length (lib.filter (hostName: hosts.${hostName}.router == true) hostNames);
+      routerCount = lib.length (lib.filter (hostName: hosts.${hostName}.router) hostNames);
       
       # Il doit y avoir exactement un routeur
       exactlyOneRouter = routerCount == 1;
@@ -94,7 +94,7 @@ let
       # Trouver le routeur principal
       hosts = topology.hosts;
       hostNames = lib.attrNames hosts;
-      routerHost = lib.findFirst (hostName: hosts.${hostName}.router == true) null hostNames;
+      routerHost = lib.findFirst (hostName: hosts.${hostName}.router) null hostNames;
       routerAddress = hosts.${routerHost}.addresses.infra;
     in
     assert apiAddress == routerAddress;

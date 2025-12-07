@@ -1,4 +1,4 @@
-{ ... }:
+_:
 let
   topology = import ../infra/topology.nix;
 in {
