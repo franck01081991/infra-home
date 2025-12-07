@@ -30,13 +30,14 @@ in {
 
           authorizedKeys = lib.mkOption {
             type = lib.types.listOf lib.types.str;
-            default = [ 
+            default = [
               # ⚠️  IMPORTANT: Remplacez cette clé par votre clé publique SSH !
               # Générez une clé avec: ssh-keygen -t ed25519 -C "votre.email@example.com"
               # Puis copiez le contenu de ~/.ssh/id_ed25519.pub ici
               "ssh-ed25519 AAAA...REMPLACEZ_PAR_VOTRE_CLE_PUBLIQUE...votre.email@example.com"
             ];
-            description = "Clés SSH autorisées. DOIT être remplacé par votre clé publique !";
+            description =
+              "Clés SSH autorisées. DOIT être remplacé par votre clé publique !";
           };
         };
       };

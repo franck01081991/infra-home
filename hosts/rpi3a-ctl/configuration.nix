@@ -1,10 +1,7 @@
 { topology, ... }:
-let
-  host = topology.hosts.rpi3a-ctl;
+let host = topology.hosts.rpi3a-ctl;
 in {
-  imports = [
-    ./hardware-configuration.nix
-  ];
+  imports = [ ./hardware-configuration.nix ];
 
   networking.hostName = "rpi3a-ctl";
 

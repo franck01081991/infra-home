@@ -1,10 +1,7 @@
 { topology, ... }:
-let
-  host = topology.hosts.rpi4-1;
+let host = topology.hosts.rpi4-1;
 in {
-  imports = [
-    ./hardware-configuration.nix
-  ];
+  imports = [ ./hardware-configuration.nix ];
 
   networking.hostName = "rpi4-1";
 
@@ -25,7 +22,8 @@ in {
       nodeIP = host.addresses.infra;
       inherit (topology.k3s) apiAddress;
       inherit (host.k3s) clusterInit nodeLabels;
-      serverAddr = if host.k3s.clusterInit then null else topology.k3s.serverAddr;
+      serverAddr =
+        if host.k3s.clusterInit then null else topology.k3s.serverAddr;
     };
 
     hardening.enable = true;

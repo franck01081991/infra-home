@@ -4,61 +4,61 @@
 
 with lib;
 
-let
-  cfg = config.roles.security-enhanced;
-in
-{
+let cfg = config.roles.security-enhanced;
+in {
   options.roles.security-enhanced = {
     enable = mkEnableOption "sécurité renforcée avec fail2ban et monitoring";
-    
+
     fail2ban = {
       enable = mkOption {
         type = types.bool;
         default = true;
-        description = "Activer fail2ban pour la protection contre les intrusions";
+        description =
+          "Activer fail2ban pour la protection contre les intrusions";
       };
-      
+
       banTime = mkOption {
         type = types.str;
         default = "1h";
         description = "Durée de bannissement par défaut";
       };
-      
+
       maxRetry = mkOption {
         type = types.int;
         default = 3;
         description = "Nombre maximum de tentatives avant bannissement";
       };
     };
-    
+
     monitoring = {
       enable = mkOption {
         type = types.bool;
         default = true;
         description = "Activer le monitoring système avec alertes";
       };
-      
+
       alertEmail = mkOption {
         type = types.nullOr types.str;
         default = null;
         description = "Email pour recevoir les alertes (optionnel)";
         example = "admin@example.com";
       };
-      
+
       checkInterval = mkOption {
         type = types.str;
         default = "5min";
         description = "Intervalle de vérification du monitoring";
       };
     };
-    
+
     autoUpdates = {
       enable = mkOption {
         type = types.bool;
         default = false;
-        description = "Activer les mises à jour automatiques (recommandé: false)";
+        description =
+          "Activer les mises à jour automatiques (recommandé: false)";
       };
-      
+
       schedule = mkOption {
         type = types.str;
         default = "weekly";
@@ -68,18 +68,18 @@ in
   };
 
   config = mkIf cfg.enable {
-    
+
     # Configuration des services
     services = mkMerge [
       # Configuration fail2ban
       (mkIf cfg.fail2ban.enable {
         fail2ban = {
           enable = true;
-          
+
           # Configuration globale
           bantime = cfg.fail2ban.banTime;
           maxretry = cfg.fail2ban.maxRetry;
-          
+
           # Jails (prisons) pour différents services
           jails = {
             # Protection SSH
@@ -92,7 +92,7 @@ in
               findtime = "10m";
               action = "iptables[name=SSH, port=ssh, protocol=tcp]";
             };
-            
+
             # Protection contre les scans de ports
             port-scan = {
               enabled = true;
@@ -102,7 +102,7 @@ in
               bantime = "24h";
               findtime = "10m";
             };
-            
+
             # Protection nginx (si présent)
             nginx-http-auth = {
               enabled = true;
@@ -112,12 +112,12 @@ in
               bantime = cfg.fail2ban.banTime;
             };
           };
-          
+
           # Filtres personnalisés
           extraPackages = [ pkgs.ipset ];
         };
       })
-      
+
       # Configuration rsyslog pour les logs fail2ban
       (mkIf cfg.fail2ban.enable {
         rsyslog = {
@@ -126,14 +126,14 @@ in
             # Logs pour fail2ban
             :msg,contains,"kernel:" /var/log/kern.log
             & stop
-            
+
             # Logs d'authentification
             auth,authpriv.* /var/log/auth.log
             & stop
           '';
         };
       })
-      
+
       # Configuration logrotate
       (mkIf cfg.monitoring.enable {
         logrotate = {
@@ -171,19 +171,19 @@ in
           ignoreregex =
         '';
       })
-      
+
       # Packages système pour monitoring
       (mkIf cfg.monitoring.enable {
         systemPackages = with pkgs; [
-          bc          # Calculs dans les scripts
-          curl        # Tests de connectivité
-          jq          # Parsing JSON
-          htop        # Monitoring interactif
-          iotop       # Monitoring I/O
-          nethogs     # Monitoring réseau par processus
+          bc # Calculs dans les scripts
+          curl # Tests de connectivité
+          jq # Parsing JSON
+          htop # Monitoring interactif
+          iotop # Monitoring I/O
+          nethogs # Monitoring réseau par processus
         ];
       })
-      
+
       # Configuration des alias email
       (mkIf (cfg.monitoring.enable && cfg.monitoring.alertEmail != null) {
         etc.aliases = {
@@ -203,19 +203,22 @@ in
         services.system-monitor = {
           description = "Monitoring système avec alertes";
           wantedBy = [ "multi-user.target" ];
-          
+
           serviceConfig = {
             Type = "oneshot";
             User = "root";
             ExecStart = pkgs.writeShellScript "system-monitor" ''
               #!/bin/bash
               set -euo pipefail
-              
+
               # Configuration
-              ALERT_EMAIL="${optionalString (cfg.monitoring.alertEmail != null) cfg.monitoring.alertEmail}"
+              ALERT_EMAIL="${
+                optionalString (cfg.monitoring.alertEmail != null)
+                cfg.monitoring.alertEmail
+              }"
               HOSTNAME=$(hostname)
               TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-              
+
               # Fonction d'alerte
               send_alert() {
                 local subject="$1"
@@ -228,7 +231,7 @@ in
                 # Log local
                 logger -t system-monitor "$subject: $message"
               }
-              
+
               # Vérification de l'espace disque
               check_disk_space() {
                 local usage
@@ -242,7 +245,7 @@ in
                     "L'espace disque est à $usage% sur $HOSTNAME à $TIMESTAMP"
                 fi
               }
-              
+
               # Vérification de la charge système
               check_load() {
                 local load_1min
@@ -257,7 +260,7 @@ in
                     "Charge 1min: $load_1min (seuil: $load_threshold) sur $HOSTNAME à $TIMESTAMP"
                 fi
               }
-              
+
               # Vérification de la mémoire
               check_memory() {
                 local mem_usage
@@ -271,7 +274,7 @@ in
                     "Utilisation mémoire: $mem_usage% sur $HOSTNAME à $TIMESTAMP"
                 fi
               }
-              
+
               # Vérification des services critiques
               check_services() {
                 local services=("sshd" "systemd-networkd")
@@ -283,25 +286,25 @@ in
                   fi
                 done
               }
-              
+
               # Exécution des vérifications
               check_disk_space
               check_load
               check_memory
               check_services
-              
+
               echo "Monitoring terminé à $TIMESTAMP"
             '';
           };
         };
       })
-      
+
       # Timer pour le monitoring
       (mkIf cfg.monitoring.enable {
         timers.system-monitor = {
           description = "Timer pour le monitoring système";
           wantedBy = [ "timers.target" ];
-          
+
           timerConfig = {
             OnCalendar = cfg.monitoring.checkInterval;
             Persistent = true;
@@ -309,7 +312,7 @@ in
           };
         };
       })
-      
+
       # Timer pour les mises à jour automatiques (optionnel)
       (mkIf cfg.autoUpdates.enable {
         timers.nixos-upgrade = {
@@ -331,23 +334,23 @@ in
       "net.ipv4.conf.default.accept_redirects" = 0;
       "net.ipv4.conf.all.secure_redirects" = 0;
       "net.ipv4.conf.default.secure_redirects" = 0;
-      
+
       # Protection contre le spoofing
       "net.ipv4.conf.all.rp_filter" = 1;
       "net.ipv4.conf.default.rp_filter" = 1;
-      
+
       # Désactiver le forwarding IP par défaut (sera activé par le module router si nécessaire)
       "net.ipv4.ip_forward" = 0;
       "net.ipv6.conf.all.forwarding" = 0;
-      
+
       # Protection contre les attaques SYN flood
       "net.ipv4.tcp_syncookies" = 1;
       "net.ipv4.tcp_max_syn_backlog" = 2048;
       "net.ipv4.tcp_synack_retries" = 3;
-      
+
       # Ignorer les pings ICMP
       "net.ipv4.icmp_echo_ignore_all" = 1;
-      
+
       # Logs des paquets suspects
       "net.ipv4.conf.all.log_martians" = 1;
       "net.ipv4.conf.default.log_martians" = 1;
@@ -356,7 +359,7 @@ in
     # Configuration du pare-feu avec nftables
     networking.nftables = mkIf cfg.enable {
       enable = true;
-      
+
       # Règles de base pour la sécurité
       ruleset = ''
         table inet filter {

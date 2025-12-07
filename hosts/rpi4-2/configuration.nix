@@ -1,10 +1,7 @@
 { topology, ... }:
-let
-  host = topology.hosts.rpi4-2;
+let host = topology.hosts.rpi4-2;
 in {
-  imports = [
-    ./hardware-configuration.nix
-  ];
+  imports = [ ./hardware-configuration.nix ];
 
   networking.hostName = "rpi4-2";
 

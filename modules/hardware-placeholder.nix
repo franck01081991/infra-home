@@ -1,5 +1,4 @@
-{ config, lib, pkgs, ... }:
-{
+{ config, lib, pkgs, ... }: {
   # Placeholder hardware profile for evaluation and CI.
   # Replace with host-specific `nixos-generate-config` output when available.
   boot.loader.grub.enable = false;
@@ -10,5 +9,5 @@
     fsType = "ext4";
   };
 
-  swapDevices = [];
+  swapDevices = [ ];
 }
