@@ -2,9 +2,12 @@ SHELL := bash
 ENV ?= review
 KUSTOMIZE ?= ./bin/kustomize
 
-.PHONY: test pre-commit nix-check shellcheck kubeconform helm-lint render deploy tools kustomize
+.PHONY: test unit-tests pre-commit nix-check shellcheck kubeconform helm-lint render deploy tools kustomize
 
-test: pre-commit nix-check shellcheck kubeconform helm-lint
+test: unit-tests pre-commit nix-check shellcheck kubeconform helm-lint
+
+unit-tests:
+	./tests/run_tests.sh
 
 pre-commit:
 	pre-commit run --all-files

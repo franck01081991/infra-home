@@ -21,3 +21,8 @@ dist/
 *.log
 .DS_Store
 bin/
+
+# artefacts de tests
+tests/check-addressing-test.sh
+*.test
+test-results/
