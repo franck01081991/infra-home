@@ -75,6 +75,10 @@ infra-home/
 │   ├── deploy-rpi.sh               # Déploiement NixOS
 │   ├── deploy-all.sh               # Déploiement multi-hôtes
 │   └── bootstrap-openbao.sh        # Configuration OpenBao
+├── 📁 tests/                       # Tests unitaires
+│   ├── test_topology.bats          # Tests configuration Nix
+│   ├── test_check_addressing.bats  # Tests scripts bash
+│   └── run_tests.sh                # Runner de tests
 ├── 📁 secrets/                     # Artefacts chiffrés SOPS/age
 └── 📁 docs/                        # Documentation détaillée
 ```
@@ -99,7 +103,8 @@ infra-home/
 
 ```bash
 # Validation complète
-make test                           # lint + kubeconform + scans sécurité
+make test                           # tests unitaires + lint + kubeconform + scans sécurité
+make unit-tests                     # tests unitaires uniquement
 nix flake check                     # validation modules Nix
 
 # Déploiement NixOS
@@ -124,4 +129,5 @@ age-keygen -o ~/.config/age/key.txt # génération clé age
 - **🔐 OpenBao** : Gestionnaire de secrets (fork HashiCorp Vault)
 - **🔑 SOPS + age** : Chiffrement des secrets dans Git
 - **🌐 nftables** : Pare-feu et routage avancé
+- **🧪 BATS** : Tests automatisés pour scripts bash
 - **📱 Android** : Workers mobiles avec Termux + k3s
