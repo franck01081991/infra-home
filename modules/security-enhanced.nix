@@ -1,29 +1,27 @@
 # Module de sécurité renforcée pour infra-home
-# Ajoute fail2ban, monitoring et autres protections proactives
-
+# Fournit fail2ban, monitoring système, durcissement réseau et alertes
 { config, lib, pkgs, ... }:
 
 with lib;
 
 let
-  cfg = config.security.enhanced;
+  cfg = config.roles.security-enhanced;
 in
-
 {
-  options.security.enhanced = {
+  options.roles.security-enhanced = {
     enable = mkEnableOption "sécurité renforcée avec fail2ban et monitoring";
     
     fail2ban = {
       enable = mkOption {
         type = types.bool;
         default = true;
-        description = "Activer fail2ban pour la protection contre les attaques par force brute";
+        description = "Activer fail2ban pour la protection contre les intrusions";
       };
       
       banTime = mkOption {
         type = types.str;
         default = "1h";
-        description = "Durée de bannissement des IPs suspectes";
+        description = "Durée de bannissement par défaut";
       };
       
       maxRetry = mkOption {
@@ -37,13 +35,20 @@ in
       enable = mkOption {
         type = types.bool;
         default = true;
-        description = "Activer le monitoring système basique";
+        description = "Activer le monitoring système avec alertes";
       };
       
       alertEmail = mkOption {
         type = types.nullOr types.str;
         default = null;
         description = "Email pour recevoir les alertes (optionnel)";
+        example = "admin@example.com";
+      };
+      
+      checkInterval = mkOption {
+        type = types.str;
+        default = "5min";
+        description = "Intervalle de vérification du monitoring";
       };
     };
     
@@ -51,209 +56,275 @@ in
       enable = mkOption {
         type = types.bool;
         default = false;
-        description = "Activer les mises à jour automatiques de sécurité";
+        description = "Activer les mises à jour automatiques (recommandé: false)";
       };
       
       schedule = mkOption {
         type = types.str;
-        default = "03:00";
-        description = "Heure des mises à jour automatiques (format HH:MM)";
+        default = "weekly";
+        description = "Fréquence des mises à jour automatiques";
       };
     };
   };
 
   config = mkIf cfg.enable {
     
-    # Configuration fail2ban
-    services.fail2ban = mkIf cfg.fail2ban.enable {
-      enable = true;
-      
-      # Configuration globale
-      bantime = cfg.fail2ban.banTime;
-      maxretry = cfg.fail2ban.maxRetry;
-      
-      # Jails (prisons) pour différents services
-      jails = {
-        # Protection SSH
-        sshd = {
-          enabled = true;
-          filter = "sshd";
-          logpath = "/var/log/auth.log";
+    # Configuration des services
+    services = mkMerge [
+      # Configuration fail2ban
+      (mkIf cfg.fail2ban.enable {
+        fail2ban = {
+          enable = true;
+          
+          # Configuration globale
+          bantime = cfg.fail2ban.banTime;
           maxretry = cfg.fail2ban.maxRetry;
-          bantime = cfg.fail2ban.banTime;
-          findtime = "10m";
-          action = "iptables[name=SSH, port=ssh, protocol=tcp]";
+          
+          # Jails (prisons) pour différents services
+          jails = {
+            # Protection SSH
+            sshd = {
+              enabled = true;
+              filter = "sshd";
+              logpath = "/var/log/auth.log";
+              maxretry = cfg.fail2ban.maxRetry;
+              bantime = cfg.fail2ban.banTime;
+              findtime = "10m";
+              action = "iptables[name=SSH, port=ssh, protocol=tcp]";
+            };
+            
+            # Protection contre les scans de ports
+            port-scan = {
+              enabled = true;
+              filter = "port-scan";
+              logpath = "/var/log/kern.log";
+              maxretry = 1;
+              bantime = "24h";
+              findtime = "10m";
+            };
+            
+            # Protection nginx (si présent)
+            nginx-http-auth = {
+              enabled = true;
+              filter = "nginx-http-auth";
+              logpath = "/var/log/nginx/error.log";
+              maxretry = 3;
+              bantime = cfg.fail2ban.banTime;
+            };
+          };
+          
+          # Filtres personnalisés
+          extraPackages = [ pkgs.ipset ];
         };
-        
-        # Protection contre les scans de ports
-        port-scan = {
-          enabled = true;
-          filter = "port-scan";
-          logpath = "/var/log/kern.log";
-          maxretry = 1;
-          bantime = "24h";
-          findtime = "10m";
-        };
-        
-        # Protection nginx (si présent)
-        nginx-http-auth = {
-          enabled = true;
-          filter = "nginx-http-auth";
-          logpath = "/var/log/nginx/error.log";
-          maxretry = 3;
-          bantime = cfg.fail2ban.banTime;
-        };
-      };
+      })
       
-      # Filtres personnalisés
-      extraPackages = [ pkgs.ipset ];
-    };
-
-    # Filtres fail2ban personnalisés
-    environment.etc."fail2ban/filter.d/port-scan.conf".text = ''
-      [Definition]
-      failregex = .*kernel:.*IN=.*OUT=.*SRC=<HOST>.*DPT=(22|23|53|80|110|143|443|993|995).*
-      ignoreregex =
-    '';
-
-    # Configuration du monitoring système
-    systemd.services.system-monitor = mkIf cfg.monitoring.enable {
-      description = "Monitoring système basique";
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig = {
-        Type = "oneshot";
-        User = "root";
-        ExecStart = pkgs.writeScript "system-monitor" ''
-          #!${pkgs.bash}/bin/bash
-          
-          # Vérifications système
-          HOSTNAME=$(hostname)
-          DATE=$(date)
-          
-          # Vérifier l'espace disque
-          DISK_USAGE=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
-          if [ "$DISK_USAGE" -gt 85 ]; then
-            echo "ALERTE: Espace disque faible sur $HOSTNAME: $DISK_USAGE%" | logger -t system-monitor
-            ${optionalString (cfg.monitoring.alertEmail != null) ''
-              echo "ALERTE: Espace disque faible sur $HOSTNAME: $DISK_USAGE%" | \
-                mail -s "Alerte infra-home: Espace disque" ${cfg.monitoring.alertEmail}
-            ''}
-          fi
-          
-          # Vérifier la charge système
-          LOAD=$(uptime | awk -F'load average:' '{print $2}' | awk '{print $1}' | sed 's/,//')
-          LOAD_INT=$(echo "$LOAD * 100" | bc | cut -d. -f1)
-          if [ "$LOAD_INT" -gt 200 ]; then
-            echo "ALERTE: Charge système élevée sur $HOSTNAME: $LOAD" | logger -t system-monitor
-          fi
-          
-          # Vérifier la mémoire
-          MEM_USAGE=$(free | awk 'NR==2{printf "%.0f", $3*100/$2}')
-          if [ "$MEM_USAGE" -gt 90 ]; then
-            echo "ALERTE: Mémoire faible sur $HOSTNAME: $MEM_USAGE%" | logger -t system-monitor
-          fi
-          
-          # Vérifier les services critiques
-          for service in sshd k3s; do
-            if ! systemctl is-active --quiet $service; then
-              echo "ALERTE: Service $service arrêté sur $HOSTNAME" | logger -t system-monitor
-              ${optionalString (cfg.monitoring.alertEmail != null) ''
-                echo "ALERTE: Service $service arrêté sur $HOSTNAME" | \
-                  mail -s "Alerte infra-home: Service arrêté" ${cfg.monitoring.alertEmail}
-              ''}
-            fi
-          done
-          
-          # Log des statistiques normales
-          echo "INFO: $HOSTNAME - Disque: $DISK_USAGE%, Charge: $LOAD, Mémoire: $MEM_USAGE%" | logger -t system-monitor
-        '';
-      };
-    };
-
-    # Timer pour le monitoring (toutes les 15 minutes)
-    systemd.timers.system-monitor = mkIf cfg.monitoring.enable {
-      description = "Timer pour le monitoring système";
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnCalendar = "*:0/15";  # Toutes les 15 minutes
-        Persistent = true;
-      };
-    };
-
-    # Configuration des mises à jour automatiques
-    system.autoUpgrade = mkIf cfg.autoUpdates.enable {
-      enable = true;
-      dates = "daily";
-      allowReboot = false;  # Pas de redémarrage automatique
-      flake = "/etc/nixos";  # Utiliser la configuration locale
+      # Configuration rsyslog pour les logs fail2ban
+      (mkIf cfg.fail2ban.enable {
+        rsyslog = {
+          enable = true;
+          extraConfig = ''
+            # Logs pour fail2ban
+            :msg,contains,"kernel:" /var/log/kern.log
+            & stop
+            
+            # Logs d'authentification
+            auth,authpriv.* /var/log/auth.log
+            & stop
+          '';
+        };
+      })
       
-      # Script personnalisé pour les mises à jour
-      operation = "switch";
-    };
-
-    # Timer personnalisé pour les mises à jour
-    systemd.timers.nixos-upgrade = mkIf cfg.autoUpdates.enable {
-      timerConfig = {
-        OnCalendar = "daily";
-        RandomizedDelaySec = "1h";  # Délai aléatoire pour éviter la surcharge
-        Persistent = true;
-      };
-    };
-
-    # Packages nécessaires pour le monitoring
-    environment.systemPackages = with pkgs; mkIf cfg.monitoring.enable [
-      bc          # Calculs dans les scripts
-      mailutils   # Envoi d'emails (si configuré)
-      htop        # Monitoring interactif
-      iotop       # Monitoring I/O
-      nethogs     # Monitoring réseau par processus
+      # Configuration logrotate
+      (mkIf cfg.monitoring.enable {
+        logrotate = {
+          enable = true;
+          settings = {
+            "/var/log/auth.log" = {
+              frequency = "daily";
+              rotate = 7;
+              compress = true;
+              delaycompress = true;
+              missingok = true;
+              notifempty = true;
+              create = "640 root adm";
+            };
+            "/var/log/kern.log" = {
+              frequency = "daily";
+              rotate = 7;
+              compress = true;
+              delaycompress = true;
+              missingok = true;
+              notifempty = true;
+            };
+          };
+        };
+      })
     ];
 
-    # Configuration des logs pour fail2ban
-    services.rsyslog = {
-      enable = true;
-      extraConfig = ''
-        # Logs pour fail2ban
-        auth,authpriv.*                 /var/log/auth.log
-        kern.*                          /var/log/kern.log
-        
-        # Rotation des logs
-        $WorkDirectory /var/spool/rsyslog
-        $ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
-      '';
-    };
-
-    # Rotation des logs
-    services.logrotate = {
-      enable = true;
-      settings = {
-        "/var/log/auth.log" = {
-          frequency = "weekly";
-          rotate = 4;
-          compress = true;
-          delaycompress = true;
-          missingok = true;
-          notifempty = true;
-          postrotate = "systemctl reload rsyslog";
+    # Configuration de l'environnement
+    environment = mkMerge [
+      # Filtres fail2ban personnalisés
+      (mkIf cfg.fail2ban.enable {
+        etc."fail2ban/filter.d/port-scan.conf".text = ''
+          [Definition]
+          failregex = .*kernel:.*IN=.*OUT=.*SRC=<HOST>.*DPT=(22|23|53|80|110|143|443|993|995).*
+          ignoreregex =
+        '';
+      })
+      
+      # Packages système pour monitoring
+      (mkIf cfg.monitoring.enable {
+        systemPackages = with pkgs; [
+          bc          # Calculs dans les scripts
+          curl        # Tests de connectivité
+          jq          # Parsing JSON
+          htop        # Monitoring interactif
+          iotop       # Monitoring I/O
+          nethogs     # Monitoring réseau par processus
+        ];
+      })
+      
+      # Configuration des alias email
+      (mkIf (cfg.monitoring.enable && cfg.monitoring.alertEmail != null) {
+        etc.aliases = {
+          text = ''
+            root: ${cfg.monitoring.alertEmail}
+            postmaster: ${cfg.monitoring.alertEmail}
+            abuse: ${cfg.monitoring.alertEmail}
+          '';
         };
-        
-        "/var/log/kern.log" = {
-          frequency = "weekly";
-          rotate = 4;
-          compress = true;
-          delaycompress = true;
-          missingok = true;
-          notifempty = true;
-          postrotate = "systemctl reload rsyslog";
-        };
-      };
-    };
+      })
+    ];
 
-    # Durcissement supplémentaire du noyau
-    boot.kernel.sysctl = {
+    # Configuration systemd
+    systemd = mkMerge [
+      # Service de monitoring système
+      (mkIf cfg.monitoring.enable {
+        services.system-monitor = {
+          description = "Monitoring système avec alertes";
+          wantedBy = [ "multi-user.target" ];
+          
+          serviceConfig = {
+            Type = "oneshot";
+            User = "root";
+            ExecStart = pkgs.writeShellScript "system-monitor" ''
+              #!/bin/bash
+              set -euo pipefail
+              
+              # Configuration
+              ALERT_EMAIL="${optionalString (cfg.monitoring.alertEmail != null) cfg.monitoring.alertEmail}"
+              HOSTNAME=$(hostname)
+              TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+              
+              # Fonction d'alerte
+              send_alert() {
+                local subject="$1"
+                local message="$2"
+                
+                if [[ -n "$ALERT_EMAIL" ]]; then
+                  echo "$message" | mail -s "[$HOSTNAME] $subject" "$ALERT_EMAIL" || true
+                fi
+                
+                # Log local
+                logger -t system-monitor "$subject: $message"
+              }
+              
+              # Vérification de l'espace disque
+              check_disk_space() {
+                local usage
+                usage=$(df / | awk 'NR==2 {print $5}' | sed 's/%//')
+                
+                if [[ $usage -gt 90 ]]; then
+                  send_alert "CRITIQUE: Espace disque faible" \
+                    "L'espace disque est à $usage% sur $HOSTNAME à $TIMESTAMP"
+                elif [[ $usage -gt 80 ]]; then
+                  send_alert "ATTENTION: Espace disque" \
+                    "L'espace disque est à $usage% sur $HOSTNAME à $TIMESTAMP"
+                fi
+              }
+              
+              # Vérification de la charge système
+              check_load() {
+                local load_1min
+                load_1min=$(uptime | awk -F'load average:' '{print $2}' | awk '{print $1}' | sed 's/,//')
+                local cpu_count
+                cpu_count=$(nproc)
+                local load_threshold
+                load_threshold=$(echo "$cpu_count * 2" | bc)
+                
+                if (( $(echo "$load_1min > $load_threshold" | bc -l) )); then
+                  send_alert "ATTENTION: Charge système élevée" \
+                    "Charge 1min: $load_1min (seuil: $load_threshold) sur $HOSTNAME à $TIMESTAMP"
+                fi
+              }
+              
+              # Vérification de la mémoire
+              check_memory() {
+                local mem_usage
+                mem_usage=$(free | awk 'NR==2{printf "%.0f", $3*100/$2}')
+                
+                if [[ $mem_usage -gt 90 ]]; then
+                  send_alert "CRITIQUE: Mémoire faible" \
+                    "Utilisation mémoire: $mem_usage% sur $HOSTNAME à $TIMESTAMP"
+                elif [[ $mem_usage -gt 80 ]]; then
+                  send_alert "ATTENTION: Mémoire élevée" \
+                    "Utilisation mémoire: $mem_usage% sur $HOSTNAME à $TIMESTAMP"
+                fi
+              }
+              
+              # Vérification des services critiques
+              check_services() {
+                local services=("sshd" "systemd-networkd")
+                
+                for service in "''${services[@]}"; do
+                  if ! systemctl is-active --quiet "$service"; then
+                    send_alert "CRITIQUE: Service arrêté" \
+                      "Le service $service est arrêté sur $HOSTNAME à $TIMESTAMP"
+                  fi
+                done
+              }
+              
+              # Exécution des vérifications
+              check_disk_space
+              check_load
+              check_memory
+              check_services
+              
+              echo "Monitoring terminé à $TIMESTAMP"
+            '';
+          };
+        };
+      })
+      
+      # Timer pour le monitoring
+      (mkIf cfg.monitoring.enable {
+        timers.system-monitor = {
+          description = "Timer pour le monitoring système";
+          wantedBy = [ "timers.target" ];
+          
+          timerConfig = {
+            OnCalendar = cfg.monitoring.checkInterval;
+            Persistent = true;
+            RandomizedDelaySec = "1min";
+          };
+        };
+      })
+      
+      # Timer pour les mises à jour automatiques (optionnel)
+      (mkIf cfg.autoUpdates.enable {
+        timers.nixos-upgrade = {
+          timerConfig = {
+            OnCalendar = cfg.autoUpdates.schedule;
+            Persistent = true;
+            RandomizedDelaySec = "1h";
+          };
+        };
+      })
+    ];
+
+    # Durcissement réseau avec sysctl
+    boot.kernel.sysctl = mkIf cfg.enable {
       # Protection contre les attaques réseau
-      "net.ipv4.conf.all.log_martians" = 1;
-      "net.ipv4.conf.default.log_martians" = 1;
       "net.ipv4.conf.all.send_redirects" = 0;
       "net.ipv4.conf.default.send_redirects" = 0;
       "net.ipv4.conf.all.accept_redirects" = 0;
@@ -261,48 +332,64 @@ in
       "net.ipv4.conf.all.secure_redirects" = 0;
       "net.ipv4.conf.default.secure_redirects" = 0;
       
+      # Protection contre le spoofing
+      "net.ipv4.conf.all.rp_filter" = 1;
+      "net.ipv4.conf.default.rp_filter" = 1;
+      
+      # Désactiver le forwarding IP par défaut (sera activé par le module router si nécessaire)
+      "net.ipv4.ip_forward" = 0;
+      "net.ipv6.conf.all.forwarding" = 0;
+      
       # Protection contre les attaques SYN flood
       "net.ipv4.tcp_syncookies" = 1;
       "net.ipv4.tcp_max_syn_backlog" = 2048;
-      "net.ipv4.tcp_synack_retries" = 2;
-      "net.ipv4.tcp_syn_retries" = 5;
+      "net.ipv4.tcp_synack_retries" = 3;
       
-      # Limiter les pings
-      "net.ipv4.icmp_echo_ignore_broadcasts" = 1;
-      "net.ipv4.icmp_ignore_bogus_error_responses" = 1;
+      # Ignorer les pings ICMP
+      "net.ipv4.icmp_echo_ignore_all" = 1;
       
-      # Protection contre l'IP spoofing
-      "net.ipv4.conf.all.rp_filter" = 1;
-      "net.ipv4.conf.default.rp_filter" = 1;
+      # Logs des paquets suspects
+      "net.ipv4.conf.all.log_martians" = 1;
+      "net.ipv4.conf.default.log_martians" = 1;
     };
 
-    # Configuration des alertes par email (si configuré)
-    programs.msmtp = mkIf (cfg.monitoring.enable && cfg.monitoring.alertEmail != null) {
+    # Configuration du pare-feu avec nftables
+    networking.nftables = mkIf cfg.enable {
       enable = true;
-      setSendmail = true;
-      defaults = {
-        aliases = "/etc/aliases";
-        port = 587;
-        tls_trust_file = "/etc/ssl/certs/ca-certificates.crt";
-        tls = "on";
-        auth = "login";
-        timeout = "30";
-      };
-      accounts = {
-        default = {
-          host = "smtp.gmail.com";  # Adaptez selon votre fournisseur
-          passwordeval = "echo 'VOTRE_MOT_DE_PASSE_APP'";  # À configurer
-          user = cfg.monitoring.alertEmail;
-          from = cfg.monitoring.alertEmail;
-        };
-      };
-    };
-
-    # Alias email pour root
-    environment.etc.aliases = mkIf (cfg.monitoring.enable && cfg.monitoring.alertEmail != null) {
-      text = ''
-        root: ${cfg.monitoring.alertEmail}
-        admin: ${cfg.monitoring.alertEmail}
+      
+      # Règles de base pour la sécurité
+      ruleset = ''
+        table inet filter {
+          # Chaîne d'entrée
+          chain input {
+            type filter hook input priority filter; policy drop;
+            
+            # Autoriser le loopback
+            iif "lo" accept
+            
+            # Autoriser les connexions établies et liées
+            ct state established,related accept
+            
+            # Autoriser SSH (port 22)
+            tcp dport 22 ct state new accept
+            
+            # Autoriser ICMP (ping) de manière limitée
+            icmp type echo-request limit rate 1/second accept
+            
+            # Logs des paquets rejetés (pour fail2ban)
+            log prefix "DROPPED: " level info drop
+          }
+          
+          # Chaîne de sortie (permissive par défaut)
+          chain output {
+            type filter hook output priority filter; policy accept;
+          }
+          
+          # Chaîne de forwarding (sera configurée par le module router si nécessaire)
+          chain forward {
+            type filter hook forward priority filter; policy drop;
+          }
+        }
       '';
     };
   };

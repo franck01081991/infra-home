@@ -168,16 +168,19 @@ jobs:
       - name: Run kube-linter on manifests
         run: |
           set -euo pipefail
-          
+
           # Créer un fichier de configuration kube-linter
           cat > .kube-linter.yaml << 'EOF'
           checks:
             # Désactiver certains checks pour les environnements de lab
             doNotAutoAddDefaults: false
             exclude:
-              - "no-read-only-root-fs"  # Acceptable pour certains containers
-              - "run-as-non-root"       # Peut être nécessaire pour certains services
-              - "required-label-owner"  # Pas critique pour un homelab
+              # Acceptable pour certains containers
+              - "no-read-only-root-fs"
+              # Peut être nécessaire pour certains services
+              - "run-as-non-root"
+              # Pas critique pour un homelab
+              - "required-label-owner"
             include:
               - "no-privileged-containers"
               - "no-host-network"
@@ -187,11 +190,12 @@ jobs:
               - "memory-requirements"
               - "security-context-non-root"
           EOF
-          
+
           for env in review staging prod; do
             echo "🔍 Analysing $env environment with kube-linter..."
             kustomize build "clusters/${env}" > "/tmp/manifests-${env}.yaml"
-            kube-linter lint "/tmp/manifests-${env}.yaml" --config .kube-linter.yaml
+            kube-linter lint "/tmp/manifests-${env}.yaml" \
+              --config .kube-linter.yaml
           done
 
   trivy-scan:
@@ -221,15 +225,17 @@ jobs:
             echo "🐳 Scanning Dockerfile..."
             trivy config --exit-code 1 --severity HIGH,CRITICAL Dockerfile
           fi
-          
+
           # Scanner les images dans les manifests Kubernetes
           echo "🔍 Extracting container images from manifests..."
-          find clusters/ -name "*.yaml" -type f | xargs grep -h "image:" | \
+          find clusters/ -name "*.yaml" -type f | \
+            xargs grep -h "image:" | \
             sed 's/.*image: *//g' | sed 's/["'"'"']//g' | sort -u | \
             while read -r image; do
               if [[ "$image" != *"<"* ]] && [[ "$image" != "" ]]; then
                 echo "🔍 Scanning image: $image"
-                trivy image --exit-code 1 --severity HIGH,CRITICAL "$image" || true
+                trivy image --exit-code 1 \
+                  --severity HIGH,CRITICAL "$image" || true
               fi
             done
 

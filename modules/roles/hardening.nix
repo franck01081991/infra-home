@@ -1,8 +1,7 @@
 { config, lib, ... }:
 let
   cfg = config.roles.hardening;
-
-  adminUser = cfg.adminUser;
+  inherit (cfg) adminUser;
 
 in {
   options.roles.hardening = {
@@ -130,8 +129,7 @@ in {
     };
 
     users.users.${adminUser.name} = {
-      isNormalUser = adminUser.isNormalUser;
-      extraGroups = adminUser.extraGroups;
+      inherit (adminUser) isNormalUser extraGroups;
       # ⚠️  CRITIQUE: Vous DEVEZ remplacer la clé SSH par défaut dans la configuration !
       # Les connexions root et par mot de passe sont désactivées pour la sécurité.
       # Voir: modules/roles/hardening.nix ligne 38 pour modifier la clé par défaut
