@@ -30,10 +30,7 @@ let
   testClusterConfig =
     let
       # Support pour k3s (actuel) et RKE2 (futur)
-      clusterConfig = if topology ? k3s then topology.k3s 
-                     else if topology ? rke2 then topology.rke2
-                     else if topology ? cluster then topology.cluster
-                     else throw "Aucune configuration cluster trouvée";
+      clusterConfig = topology.k3s or (topology.rke2 or (topology.cluster or (throw "Aucune configuration cluster trouvée")));
       
       hasApiAddress = clusterConfig ? apiAddress;
       hasServerAddr = clusterConfig ? serverAddr || clusterConfig ? server;
@@ -69,7 +66,7 @@ let
   # Test que la configuration routeur est cohérente
   testRouterConfig =
     let
-      hosts = topology.hosts;
+      inherit (topology) hosts;
       hostNames = lib.attrNames hosts;
       
       # Compter les routeurs
@@ -85,14 +82,12 @@ let
   testClusterApiConsistency =
     let
       # Support pour k3s (actuel) et RKE2 (futur)
-      clusterConfig = if topology ? k3s then topology.k3s 
-                     else if topology ? rke2 then topology.rke2
-                     else topology.cluster;
+      clusterConfig = topology.k3s or (topology.rke2 or topology.cluster);
       
-      apiAddress = clusterConfig.apiAddress;
+      inherit (clusterConfig) apiAddress;
       
       # Trouver le routeur principal
-      hosts = topology.hosts;
+      inherit (topology) hosts;
       hostNames = lib.attrNames hosts;
       routerHost = lib.findFirst (hostName: hosts.${hostName}.router) null hostNames;
       routerAddress = hosts.${routerHost}.addresses.infra;
@@ -103,7 +98,7 @@ let
   # Test de support pour architectures multiples
   testMultiArchSupport =
     let
-      hosts = topology.hosts;
+      inherit (topology) hosts;
       hostNames = lib.attrNames hosts;
       
       # Vérifier que la configuration ne dépend pas d'une architecture spécifique
