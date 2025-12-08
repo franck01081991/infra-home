@@ -131,6 +131,9 @@ sops secrets/openbao.yaml          # édition secrets OpenBao
 age-keygen -o ~/.config/age/key.txt # génération clé age
 ```
 
+> Note CI : la lint YAML est couverte par kubeconform et kube-linter. Le job `yamllint`
+> n'est plus utilisé pour éviter les conflits avec la lint Nix.
+
 ## 🔧 Technologies utilisées
 
 - **🐧 NixOS** : Configuration système déclarative et reproductible
