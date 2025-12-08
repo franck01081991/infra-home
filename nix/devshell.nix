@@ -9,6 +9,7 @@ pkgs.mkShell {
     helm
     kubeconform
     kubectl
+    nixpkgs-lint
     nixfmt-rfc-style
     shellcheck
     trufflehog

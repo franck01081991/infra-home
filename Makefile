@@ -70,14 +70,14 @@ trivy-scan:
 		trivy config --severity HIGH,CRITICAL Dockerfile || true; \
 	fi
 
-# Linting Nix avec statix
+# Linting Nix avec nixpkgs-lint
 nix-lint:
-	@echo "🔍 Analyse du code Nix avec statix..."
-	@if ! command -v statix >/dev/null 2>&1; then \
-		echo "❌ statix non installé. Installez avec 'nix profile install nixpkgs#statix'"; \
+	@echo "🔍 Analyse du code Nix avec nixpkgs-lint..."
+	@if ! command -v nixpkgs-lint >/dev/null 2>&1; then \
+		echo "❌ nixpkgs-lint non installé. Installez avec 'nix profile install nixpkgs#nixpkgs-lint'"; \
 		exit 1; \
 	fi
-	statix check . || true
+	@nixpkgs-lint . || true
 
 # Formatage automatique du code Nix
 format-nix:
