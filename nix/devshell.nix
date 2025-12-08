@@ -5,10 +5,10 @@ pkgs.mkShell {
   packages = with pkgs; [
     age
     fluxcd
-    kustomize
     helm
     kubeconform
     kubectl
+    kustomize
     nixfmt-rfc-style
     shellcheck
     trufflehog
