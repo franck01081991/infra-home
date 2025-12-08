@@ -76,17 +76,7 @@ Le fichier Nix n'était pas formaté selon le standard RFC attendu par le pipeli
 
 **✅ Solution :**
 ```nix
-# AVANT (format étendu)
-{ pkgs }:
-pkgs.mkShell {
-  name = "infra-home";
-
-  packages = with pkgs; [
-    # liste des packages...
-  ];
-}
-
-# APRÈS (format compact)
+# AVANT (format étendu avec ligne vide)
 { pkgs }: pkgs.mkShell {
   name = "infra-home";
 
@@ -94,6 +84,44 @@ pkgs.mkShell {
     # liste des packages...
   ];
 }
+
+# APRÈS (format compact sans ligne vide)
+{ pkgs }:
+pkgs.mkShell {
+  name = "infra-home";
+  packages = with pkgs; [
+    # liste des packages...
+  ];
+}
+```
+
+### **4. Erreur "check not found" avec kube-linter**
+
+**🚨 Symptôme :**
+```
+Error: enabled checks validation errors: [check "no-host-network" not found, check "cpu-requirements" not found, ...]
+```
+
+**🔍 Cause :**
+Les noms des checks utilisés dans la configuration ne correspondent pas à ceux disponibles dans kube-linter 0.7.6.
+
+**✅ Solution :**
+```yaml
+# AVANT (checks inexistants)
+checks:
+  include:
+    - "no-privileged-containers"
+    - "no-host-network"
+    - "cpu-requirements"
+
+# APRÈS (utiliser les checks par défaut avec exclusions)
+checks:
+  doNotAutoAddDefaults: false
+  exclude:
+    - "no-read-only-root-fs"
+    - "run-as-non-root"
+    - "required-label-owner"
+    - "privileged"
 ```
 
 ## 🛠️ **Comment diagnostiquer les problèmes CI**
@@ -154,6 +182,18 @@ yamllint .github/workflows/ci.yaml
 curl -I "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.3.0/kustomize_v5.3.0_linux_amd64.tar.gz"
 
 # Doit retourner "200 OK" et "Content-Type: application/gzip"
+
+# Tester kube-linter (attention au préfixe 'v')
+curl -I "https://github.com/stackrox/kube-linter/releases/download/v0.7.6/kube-linter-linux.tar.gz"
+```
+
+### **Tester la configuration kube-linter**
+```bash
+# Lister les checks disponibles
+kube-linter checks list
+
+# Tester une configuration
+kube-linter lint --config .kube-linter.yaml manifest.yaml
 ```
 
 ## 📚 **Bonnes pratiques pour éviter les problèmes**
