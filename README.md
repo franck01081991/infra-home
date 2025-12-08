@@ -32,6 +32,8 @@ make render ENV=review && make deploy ENV=review
 ```
 
 > 💡 **Prérequis** : Nix avec flakes activés, accès SSH aux hôtes, clés age pour SOPS
+> 
+> ⚠️ **IMPORTANT** : Avant le premier déploiement, vous DEVEZ remplacer la clé SSH par défaut dans `modules/roles/hardening.nix` par votre clé publique ! Voir le [guide d'installation](docs/INSTALLATION-NIXOS-RPI.md) pour les détails.
 
 ## 🖥️ Architecture des machines
 
@@ -87,6 +89,10 @@ infra-home/
 
 ### Guides pratiques
 - **🚀 Démarrage rapide** : [`docs/QUICKSTART.md`](docs/QUICKSTART.md) - Installation et premiers pas
+- **🔧 Installation NixOS** : [`docs/INSTALLATION-NIXOS-RPI.md`](docs/INSTALLATION-NIXOS-RPI.md) - Guide détaillé pour Raspberry Pi
+- **🐳 Environnement Docker** : [`docs/DOCKER-ENVIRONMENT.md`](docs/DOCKER-ENVIRONMENT.md) - Alternative sans Nix local
+- **📝 Exemples d'extensibilité** : [`docs/EXAMPLES.md`](docs/EXAMPLES.md) - Ajouter hôtes, apps, VLANs
+- **🛡️ Sécurité et monitoring** : [`docs/SECURITY-MONITORING.md`](docs/SECURITY-MONITORING.md) - Fail2ban, alertes, sauvegardes
 - **🌐 Réseau** : [`docs/NETWORKING.md`](docs/NETWORKING.md) - VLANs, routage, Wi-Fi
 - **⚙️ GitOps/Flux** : [`docs/GITOPS.md`](docs/GITOPS.md) - Pipeline CI/CD, déploiements
 - **🔐 Secrets** : [`docs/SECRETS.md`](docs/SECRETS.md) - OpenBao, SOPS, External Secrets
@@ -103,8 +109,10 @@ infra-home/
 
 ```bash
 # Validation complète
-make test                           # tests unitaires + lint + kubeconform + scans sécurité
-make unit-tests                     # tests unitaires uniquement
+make test                           # tests de base (unit, lint, nix-check)
+make full-test                      # tests complets avec scans de sécurité
+make security-scan                  # scans de sécurité uniquement (kube-lint, trivy, nix-lint)
+make help                           # afficher toutes les commandes disponibles
 nix flake check                     # validation modules Nix
 
 # Déploiement NixOS

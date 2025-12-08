@@ -1,6 +1,3 @@
-{ ... }:
-let
-  topology = import ../infra/topology.nix;
-in {
-  _module.args.topology = topology;
-}
+_:
+let topology = import ../infra/topology.nix;
+in { _module.args.topology = topology; }

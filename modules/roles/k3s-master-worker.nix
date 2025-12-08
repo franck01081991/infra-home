@@ -4,20 +4,14 @@ let
 
   apiAddress = cfg.apiAddress or cfg.nodeIP;
 
-  nodeLabelArgs = lib.concatMap (
-    label: [ "--node-label" label ]
-  ) cfg.nodeLabels;
+  nodeLabelArgs =
+    lib.concatMap (label: [ "--node-label" label ]) cfg.nodeLabels;
 
-  taintArgs = lib.concatMap (
-    taint: [ "--node-taint" taint ]
-  ) cfg.nodeTaints;
+  taintArgs = lib.concatMap (taint: [ "--node-taint" taint ]) cfg.nodeTaints;
 
-  extraArgs = [
-    "--node-ip=${cfg.nodeIP}"
-  ]
-  ++ lib.optional (apiAddress != null) "--tls-san=${apiAddress}"
-  ++ nodeLabelArgs
-  ++ taintArgs;
+  extraArgs = [ "--node-ip=${cfg.nodeIP}" ]
+    ++ lib.optional (apiAddress != null) "--tls-san=${apiAddress}"
+    ++ nodeLabelArgs ++ taintArgs;
 
 in {
   options.roles.k3s.masterWorker = {
@@ -31,7 +25,8 @@ in {
     apiAddress = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      description = "Adresse à ajouter en SAN TLS pour l'API (par défaut nodeIP).";
+      description =
+        "Adresse à ajouter en SAN TLS pour l'API (par défaut nodeIP).";
     };
 
     clusterInit = lib.mkOption {
@@ -66,23 +61,18 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = with pkgs; [
-      k3s
-      kubectl
-      git
-    ];
+    environment.systemPackages = with pkgs; [ k3s kubectl git ];
 
     networking.firewall.allowedTCPPorts = [ 6443 ];
 
     services.k3s = {
       enable = true;
       package = pkgs.k3s;
-      tokenFile = cfg.tokenFile;
+      inherit (cfg) tokenFile clusterInit;
       role = "server";
 
-      clusterInit = cfg.clusterInit;
-
-      serverAddr = lib.mkIf (!cfg.clusterInit && cfg.serverAddr != null) cfg.serverAddr;
+      serverAddr =
+        lib.mkIf (!cfg.clusterInit && cfg.serverAddr != null) cfg.serverAddr;
 
       extraFlags = lib.concatStringsSep " " extraArgs;
     };

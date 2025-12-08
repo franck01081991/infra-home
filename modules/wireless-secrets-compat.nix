@@ -1,8 +1,6 @@
 { lib, config, ... }:
-let
-  cfg = config.networking.wireless;
-in
-{
+let cfg = config.networking.wireless;
+in {
   options.networking.wireless.secretsFile = lib.mkOption {
     type = lib.types.nullOr lib.types.path;
     default = null;
@@ -14,12 +12,11 @@ in
   };
 
   config = lib.mkIf (cfg.secretsFile != null) {
-    assertions = [
-      {
-        assertion = cfg.enable;
-        message = "networking.wireless.secretsFile requires networking.wireless.enable = true";
-      }
-    ];
+    assertions = [{
+      assertion = cfg.enable;
+      message =
+        "networking.wireless.secretsFile requires networking.wireless.enable = true";
+    }];
 
     systemd.services.wpa_supplicant = {
       serviceConfig.EnvironmentFile = lib.mkBefore [ cfg.secretsFile ];
