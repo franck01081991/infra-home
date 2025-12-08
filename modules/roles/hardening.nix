@@ -42,7 +42,7 @@ in
           };
         };
       };
-      default = {};
+      default = { };
       description = "Utilisateur admin et ses clés.";
     };
 
@@ -92,7 +92,7 @@ in
           };
         };
       };
-      default = {};
+      default = { };
       description = "Paramètres OpenSSH server.";
     };
 

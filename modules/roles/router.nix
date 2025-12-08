@@ -16,53 +16,61 @@ let
 
   networks =
     builtins.map (network: network // { iface = mkIfaceName network.id; })
-    cfg.vlans;
+      cfg.vlans;
 
-  vlansByName = builtins.listToAttrs (map (n: {
-    inherit (n) name;
-    value = n;
-  }) networks);
+  vlansByName = builtins.listToAttrs (map
+    (n: {
+      inherit (n) name;
+      value = n;
+    })
+    networks);
 
   mkForwardRule = source: rule:
     let
-      targetInterface = if rule.target == "wan" then
-        cfg.wanInterface
-      else
-        vlansByName.${rule.target}.iface;
+      targetInterface =
+        if rule.target == "wan" then
+          cfg.wanInterface
+        else
+          vlansByName.${rule.target}.iface;
       tcpPorts = lib.concatStringsSep "," (map toString rule.tcpPorts);
       udpPorts = lib.concatStringsSep "," (map toString rule.udpPorts);
       tcpCondition =
-        lib.optionalString (rule.tcpPorts != []) " tcp dport { ${tcpPorts} }";
+        lib.optionalString (rule.tcpPorts != [ ]) " tcp dport { ${tcpPorts} }";
       udpCondition =
-        lib.optionalString (rule.udpPorts != []) " udp dport { ${udpPorts} }";
+        lib.optionalString (rule.udpPorts != [ ]) " udp dport { ${udpPorts} }";
       portCondition = lib.concatStringsSep "" [ tcpCondition udpCondition ];
       protoCondition = if rule.allowAll then "" else portCondition;
-    in "    iif \"${source.iface}\" oif \"${targetInterface}\"${protoCondition} accept";
+    in
+    "    iif \"${source.iface}\" oif \"${targetInterface}\"${protoCondition} accept";
 
   mkIngressRule = network:
     let
       tcpPorts =
         lib.concatStringsSep "," (map toString network.ingressTcpPorts);
-    in lib.optionalString (network.ingressTcpPorts != [])
-    "    iif \"${network.iface}\" tcp dport { ${tcpPorts} } accept";
+    in
+    lib.optionalString (network.ingressTcpPorts != [ ])
+      "    iif \"${network.iface}\" tcp dport { ${tcpPorts} } accept";
 
   mkForwardRules = network:
     builtins.concatStringsSep "\n"
-    (map (rule: mkForwardRule network rule) network.forwardRules);
+      (map (rule: mkForwardRule network rule) network.forwardRules);
 
   mkAddresses = network:
     map (addr: { inherit (addr) address prefixLength; })
-    network.routerAddresses;
+      network.routerAddresses;
 
   subnets = map (network: network.subnet) networks;
 
   dhcpRanges = map (network: network.dhcpRange) networks;
 
-  dhcpOptions = map (network:
-    let
-      gateway =
-        builtins.elemAt network.routerAddresses network.defaultGatewayIndex;
-    in "tag:${network.name},option:router,${gateway.address}") networks;
+  dhcpOptions = map
+    (network:
+      let
+        gateway =
+          builtins.elemAt network.routerAddresses network.defaultGatewayIndex;
+      in
+      "tag:${network.name},option:router,${gateway.address}")
+    networks;
 
   nftablesInputRules = builtins.concatStringsSep "\n" ([
     "    iif \"lo\" accept"
@@ -102,7 +110,7 @@ in
     wan = lib.mkOption {
       description =
         "Paramètres du réseau Wi-Fi WAN (SSID et PSK injecté par secretsFile).";
-      default = {};
+      default = { };
       type = lib.types.submodule {
         options = {
           ssid = lib.mkOption {
@@ -142,7 +150,7 @@ in
 
     wirelessAdditionalNetworks = lib.mkOption {
       type = lib.types.attrsOf lib.types.attrs;
-      default = {};
+      default = { };
       description =
         "Réseaux Wi-Fi supplémentaires à ajouter en plus du WAN (clé = SSID).";
     };
@@ -196,7 +204,7 @@ in
 
           ingressTcpPorts = lib.mkOption {
             type = lib.types.listOf lib.types.int;
-            default = [];
+            default = [ ];
             description = "Ports TCP autorisés en entrée sur ce VLAN.";
           };
 
@@ -210,14 +218,14 @@ in
 
                 tcpPorts = lib.mkOption {
                   type = lib.types.listOf lib.types.int;
-                  default = [];
+                  default = [ ];
                   description =
                     "Ports TCP autorisés vers la cible (vide = aucun sauf si allowAll).";
                 };
 
                 udpPorts = lib.mkOption {
                   type = lib.types.listOf lib.types.int;
-                  default = [];
+                  default = [ ];
                   description =
                     "Ports UDP autorisés vers la cible (vide = aucun sauf si allowAll).";
                 };
@@ -230,7 +238,7 @@ in
                 };
               };
             });
-            default = [];
+            default = [ ];
             description = "Règles de forwarding (VLAN → cible).";
           };
         };
@@ -257,8 +265,8 @@ in
           forwardRules = [{
             target = "wan";
             allowAll = true;
-            tcpPorts = [];
-            udpPorts = [];
+            tcpPorts = [ ];
+            udpPorts = [ ];
           }];
         }
         {
@@ -275,13 +283,13 @@ in
             {
               target = "wan";
               allowAll = true;
-              tcpPorts = [];
-              udpPorts = [];
+              tcpPorts = [ ];
+              udpPorts = [ ];
             }
             {
               target = "infra";
               tcpPorts = [ 80 443 8443 ];
-              udpPorts = [];
+              udpPorts = [ ];
               allowAll = false;
             }
           ];
@@ -300,13 +308,13 @@ in
             {
               target = "wan";
               allowAll = true;
-              tcpPorts = [];
-              udpPorts = [];
+              tcpPorts = [ ];
+              udpPorts = [ ];
             }
             {
               target = "infra";
               tcpPorts = [ 443 ];
-              udpPorts = [];
+              udpPorts = [ ];
               allowAll = false;
             }
           ];
@@ -325,13 +333,13 @@ in
             {
               target = "wan";
               allowAll = true;
-              tcpPorts = [];
-              udpPorts = [];
+              tcpPorts = [ ];
+              udpPorts = [ ];
             }
             {
               target = "infra";
               tcpPorts = [ 443 8123 1883 ];
-              udpPorts = [];
+              udpPorts = [ ];
               allowAll = false;
             }
           ];
@@ -348,23 +356,27 @@ in
         networks = wirelessNetworks;
       };
 
-      vlans = builtins.listToAttrs (map (network: {
-        name = network.iface;
-        value = {
-          inherit (network) id;
-          interface = cfg.lanInterface;
-        };
-      }) networks);
+      vlans = builtins.listToAttrs (map
+        (network: {
+          name = network.iface;
+          value = {
+            inherit (network) id;
+            interface = cfg.lanInterface;
+          };
+        })
+        networks);
 
       interfaces = lib.mkMerge [
         {
           "${cfg.wanInterface}".useDHCP = true;
           "${cfg.lanInterface}".useDHCP = false;
         }
-        (builtins.listToAttrs (map (network: {
-          name = network.iface;
-          value = { ipv4.addresses = mkAddresses network; };
-        }) networks))
+        (builtins.listToAttrs (map
+          (network: {
+            name = network.iface;
+            value = { ipv4.addresses = mkAddresses network; };
+          })
+          networks))
       ];
 
       nat = {

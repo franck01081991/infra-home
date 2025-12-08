@@ -43,7 +43,7 @@ in
 
     nodeLabels = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [];
+      default = [ ];
       description = "Labels appliqués via extraFlags (--node-label).";
     };
 
