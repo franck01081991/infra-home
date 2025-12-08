@@ -65,6 +65,9 @@
         devices = phoneDevices;
       };
 
+      devShells.${system}.default =
+        import ./nix/devshell.nix { inherit pkgs; };
+
       apps.${system}.render = {
         type = "app";
         program = pkgs.writeShellApplication {

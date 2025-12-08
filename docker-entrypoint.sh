@@ -40,7 +40,11 @@ else
     echo "⚠️  Pas de connectivité Internet détectée"
 fi
 
-# Entrer dans un shell interactif ou exécuter la commande fournie
+# Entrer dans le shell de développement Nix
+echo "📦 Chargement de l'environnement de développement Nix..."
+echo "   Cela peut prendre quelques minutes lors du premier lancement..."
+
+# Si aucune commande spécifique n'est fournie, entrer dans le devshell
 if [ "$#" -eq 0 ] || [ "$1" = "/bin/bash" ]; then
     echo ""
     echo "🎯 Environnement prêt ! Vous pouvez maintenant utiliser :"
@@ -52,7 +56,9 @@ if [ "$#" -eq 0 ] || [ "$1" = "/bin/bash" ]; then
     echo "📚 Consultez docs/QUICKSTART.md pour plus d'informations"
     echo ""
 
-    exec /bin/bash
+    # Entrer dans le devshell Nix
+    exec nix develop --command bash
 else
-    exec "$@"
+    # Exécuter la commande fournie dans le devshell
+    exec nix develop --command "$@"
 fi
