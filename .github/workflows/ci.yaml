@@ -168,7 +168,8 @@ jobs:
           # Créer un fichier de configuration kube-linter
           cat > .kube-linter.yaml << 'EOF'
           checks:
-            # Utiliser les checks par défaut mais exclure ceux problématiques pour un homelab
+            # Utiliser les checks par défaut
+            # et exclure ceux problématiques pour un homelab
             doNotAutoAddDefaults: false
             exclude:
               # Acceptable pour certains containers dans un homelab

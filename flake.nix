@@ -2,14 +2,17 @@
   description =
     "Infra maison : NixOS + k3s HA + VLAN + OpenBao + téléphones workers ARM";
 
-  inputs = { nixpkgs.url = "nixpkgs/nixos-24.05"; };
+  inputs = {
+    nixpkgs.url = "nixpkgs/nixos-24.05";
+  };
 
   outputs = { self, nixpkgs, ... }@inputs:
     let
       system = "aarch64-linux";
       pkgs = import nixpkgs { inherit system; };
       phoneDevices = import ./phone/devices.nix;
-    in {
+    in
+    {
       nixosModules = {
         role-router = import ./modules/roles/router.nix;
         role-k3s-master-worker = import ./modules/roles/k3s-master-worker.nix;
