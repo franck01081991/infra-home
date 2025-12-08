@@ -32,9 +32,9 @@ let
       tcpPorts = lib.concatStringsSep "," (map toString rule.tcpPorts);
       udpPorts = lib.concatStringsSep "," (map toString rule.udpPorts);
       tcpCondition =
-        lib.optionalString (rule.tcpPorts != [ ]) " tcp dport { ${tcpPorts} }";
+        lib.optionalString (rule.tcpPorts != []) " tcp dport { ${tcpPorts} }";
       udpCondition =
-        lib.optionalString (rule.udpPorts != [ ]) " udp dport { ${udpPorts} }";
+        lib.optionalString (rule.udpPorts != []) " udp dport { ${udpPorts} }";
       portCondition = lib.concatStringsSep "" [ tcpCondition udpCondition ];
       protoCondition = if rule.allowAll then "" else portCondition;
     in "    iif \"${source.iface}\" oif \"${targetInterface}\"${protoCondition} accept";
@@ -43,7 +43,7 @@ let
     let
       tcpPorts =
         lib.concatStringsSep "," (map toString network.ingressTcpPorts);
-    in lib.optionalString (network.ingressTcpPorts != [ ])
+    in lib.optionalString (network.ingressTcpPorts != [])
     "    iif \"${network.iface}\" tcp dport { ${tcpPorts} } accept";
 
   mkForwardRules = network:
@@ -88,7 +88,8 @@ let
 
   vlanInterfaces = map (network: network.iface) networks;
 
-in {
+in
+{
   options.roles.router = {
     enable = lib.mkEnableOption "router role";
 
@@ -101,7 +102,7 @@ in {
     wan = lib.mkOption {
       description =
         "Paramètres du réseau Wi-Fi WAN (SSID et PSK injecté par secretsFile).";
-      default = { };
+      default = {};
       type = lib.types.submodule {
         options = {
           ssid = lib.mkOption {
@@ -141,7 +142,7 @@ in {
 
     wirelessAdditionalNetworks = lib.mkOption {
       type = lib.types.attrsOf lib.types.attrs;
-      default = { };
+      default = {};
       description =
         "Réseaux Wi-Fi supplémentaires à ajouter en plus du WAN (clé = SSID).";
     };
@@ -195,7 +196,7 @@ in {
 
           ingressTcpPorts = lib.mkOption {
             type = lib.types.listOf lib.types.int;
-            default = [ ];
+            default = [];
             description = "Ports TCP autorisés en entrée sur ce VLAN.";
           };
 
@@ -209,14 +210,14 @@ in {
 
                 tcpPorts = lib.mkOption {
                   type = lib.types.listOf lib.types.int;
-                  default = [ ];
+                  default = [];
                   description =
                     "Ports TCP autorisés vers la cible (vide = aucun sauf si allowAll).";
                 };
 
                 udpPorts = lib.mkOption {
                   type = lib.types.listOf lib.types.int;
-                  default = [ ];
+                  default = [];
                   description =
                     "Ports UDP autorisés vers la cible (vide = aucun sauf si allowAll).";
                 };
@@ -229,7 +230,7 @@ in {
                 };
               };
             });
-            default = [ ];
+            default = [];
             description = "Règles de forwarding (VLAN → cible).";
           };
         };
@@ -256,8 +257,8 @@ in {
           forwardRules = [{
             target = "wan";
             allowAll = true;
-            tcpPorts = [ ];
-            udpPorts = [ ];
+            tcpPorts = [];
+            udpPorts = [];
           }];
         }
         {
@@ -274,13 +275,13 @@ in {
             {
               target = "wan";
               allowAll = true;
-              tcpPorts = [ ];
-              udpPorts = [ ];
+              tcpPorts = [];
+              udpPorts = [];
             }
             {
               target = "infra";
               tcpPorts = [ 80 443 8443 ];
-              udpPorts = [ ];
+              udpPorts = [];
               allowAll = false;
             }
           ];
@@ -299,13 +300,13 @@ in {
             {
               target = "wan";
               allowAll = true;
-              tcpPorts = [ ];
-              udpPorts = [ ];
+              tcpPorts = [];
+              udpPorts = [];
             }
             {
               target = "infra";
               tcpPorts = [ 443 ];
-              udpPorts = [ ];
+              udpPorts = [];
               allowAll = false;
             }
           ];
@@ -324,13 +325,13 @@ in {
             {
               target = "wan";
               allowAll = true;
-              tcpPorts = [ ];
-              udpPorts = [ ];
+              tcpPorts = [];
+              udpPorts = [];
             }
             {
               target = "infra";
               tcpPorts = [ 443 8123 1883 ];
-              udpPorts = [ ];
+              udpPorts = [];
               allowAll = false;
             }
           ];

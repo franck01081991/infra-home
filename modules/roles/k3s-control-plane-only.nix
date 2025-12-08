@@ -13,7 +13,8 @@ let
     ++ lib.optional (apiAddress != null) "--tls-san=${apiAddress}"
     ++ nodeLabelArgs ++ taintArgs;
 
-in {
+in
+{
   options.roles.k3s.controlPlaneOnly = {
     enable = lib.mkEnableOption "k3s control-plane only role";
 
@@ -42,7 +43,7 @@ in {
 
     nodeLabels = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ ];
+      default = [];
       description = "Labels appliqués via extraFlags (--node-label).";
     };
 

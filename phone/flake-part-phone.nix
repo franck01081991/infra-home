@@ -46,7 +46,8 @@ let
         chmod +x $out/bin/start-k3s-agent
       '';
     };
-in builtins.listToAttrs (map (d: {
+in
+builtins.listToAttrs (map (d: {
   inherit (d) name;
   value = mkPhoneBundle d;
 }) devices)

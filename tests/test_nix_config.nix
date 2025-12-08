@@ -1,5 +1,5 @@
 # Tests basés sur Nix pour la validation de configuration
-{ pkgs ? import <nixpkgs> { } }:
+{ pkgs ? import <nixpkgs> {} }:
 
 let
   topology = import ../infra/topology.nix;
@@ -99,7 +99,8 @@ let
   in assert supportsMultipleArch;
   "RÉUSSI: Support pour architectures multiples";
 
-in {
+in
+{
   # Exécuter tous les tests
   runTests = pkgs.writeText "nix-config-tests" ''
     ${testUniqueVlanIds}

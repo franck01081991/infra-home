@@ -95,9 +95,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NIX_CONFIG: |
-        extra-experimental-features = nix-command flakes
-        log-level = debug
-        log-lines = 50
+        experimental-features = nix-command flakes
+        show-trace = true
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -3,7 +3,8 @@ let
   cfg = config.roles.hardening;
   inherit (cfg) adminUser;
 
-in {
+in
+{
   options.roles.hardening = {
     enable = lib.mkEnableOption "Hardening SSH et comptes";
 
@@ -41,7 +42,7 @@ in {
           };
         };
       };
-      default = { };
+      default = {};
       description = "Utilisateur admin et ses clés.";
     };
 
@@ -91,7 +92,7 @@ in {
           };
         };
       };
-      default = { };
+      default = {};
       description = "Paramètres OpenSSH server.";
     };
 

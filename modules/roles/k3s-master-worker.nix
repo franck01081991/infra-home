@@ -13,7 +13,8 @@ let
     ++ lib.optional (apiAddress != null) "--tls-san=${apiAddress}"
     ++ nodeLabelArgs ++ taintArgs;
 
-in {
+in
+{
   options.roles.k3s.masterWorker = {
     enable = lib.mkEnableOption "k3s master+worker role";
 
@@ -49,13 +50,13 @@ in {
 
     nodeLabels = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ ];
+      default = [];
       description = "Labels appliqués via extraFlags (--node-label).";
     };
 
     nodeTaints = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ ];
+      default = [];
       description = "Taints appliqués via extraFlags (--node-taint).";
     };
   };
