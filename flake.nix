@@ -1,6 +1,5 @@
 {
-  description =
-    "Infra maison : NixOS + k3s HA + VLAN + OpenBao + téléphones workers ARM";
+  description = "Infra maison : NixOS + k3s HA + VLAN + OpenBao + téléphones workers ARM";
 
   inputs = {
     nixpkgs.url = "nixpkgs/nixos-24.05";
@@ -15,8 +14,7 @@
       nixosModules = {
         role-router = import ./modules/roles/router.nix;
         role-k3s-master-worker = import ./modules/roles/k3s-master-worker.nix;
-        role-k3s-control-plane-only =
-          import ./modules/roles/k3s-control-plane-only.nix;
+        role-k3s-control-plane-only = import ./modules/roles/k3s-control-plane-only.nix;
         role-hardening = import ./modules/roles/hardening.nix;
       };
 
