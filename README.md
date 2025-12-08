@@ -114,6 +114,8 @@ make full-test                      # tests complets avec scans de sécurité
 make security-scan                  # scans de sécurité uniquement (kube-lint, trivy, nixpkgs-lint)
 make help                           # afficher toutes les commandes disponibles
 nix flake check                     # validation modules Nix
+nix run --print-build-logs nixpkgs#statix -- check .   # lint Nix local
+nix run --print-build-logs nixpkgs#nixpkgs-fmt -- --check $(find . -name "*.nix" -type f) # formatage Nix
 
 # Déploiement NixOS
 scripts/deploy-rpi.sh --ssh rpi4-1  # déploiement distant
@@ -128,6 +130,9 @@ nix run .#render -- --env staging   # alternative Nix
 sops secrets/openbao.yaml          # édition secrets OpenBao
 age-keygen -o ~/.config/age/key.txt # génération clé age
 ```
+
+> Note CI : la lint YAML est couverte par kubeconform et kube-linter. Le job `yamllint`
+> n'est plus utilisé pour éviter les conflits avec la lint Nix.
 
 ## 🔧 Technologies utilisées
 

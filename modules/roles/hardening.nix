@@ -3,7 +3,8 @@ let
   cfg = config.roles.hardening;
   inherit (cfg) adminUser;
 
-in {
+in
+{
   options.roles.hardening = {
     enable = lib.mkEnableOption "Hardening SSH et comptes";
 
