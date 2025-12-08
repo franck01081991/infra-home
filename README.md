@@ -114,6 +114,8 @@ make full-test                      # tests complets avec scans de sécurité
 make security-scan                  # scans de sécurité uniquement (kube-lint, trivy, nixpkgs-lint)
 make help                           # afficher toutes les commandes disponibles
 nix flake check                     # validation modules Nix
+nix run --print-build-logs nixpkgs#statix -- check .   # lint Nix local
+nix run --print-build-logs nixpkgs#nixpkgs-fmt -- --check $(find . -name "*.nix" -type f) # formatage Nix
 
 # Déploiement NixOS
 scripts/deploy-rpi.sh --ssh rpi4-1  # déploiement distant
