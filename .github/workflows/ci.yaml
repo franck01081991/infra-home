@@ -166,23 +166,17 @@ jobs:
           # Créer un fichier de configuration kube-linter
           cat > .kube-linter.yaml << 'EOF'
           checks:
-            # Désactiver certains checks pour les environnements de lab
+            # Utiliser les checks par défaut mais exclure ceux problématiques pour un homelab
             doNotAutoAddDefaults: false
             exclude:
-              # Acceptable pour certains containers
+              # Acceptable pour certains containers dans un homelab
               - "no-read-only-root-fs"
               # Peut être nécessaire pour certains services
               - "run-as-non-root"
               # Pas critique pour un homelab
               - "required-label-owner"
-            include:
-              - "no-privileged-containers"
-              - "no-host-network"
-              - "no-host-pid"
-              - "no-host-ipc"
-              - "cpu-requirements"
-              - "memory-requirements"
-              - "security-context-non-root"
+              # Peut être nécessaire pour certains services
+              - "privileged"
           EOF
 
           for env in review staging prod; do

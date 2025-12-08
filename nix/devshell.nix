@@ -1,6 +1,6 @@
-{ pkgs }: pkgs.mkShell {
+{ pkgs }:
+pkgs.mkShell {
   name = "infra-home";
-
   packages = with pkgs; [
     nixfmt-rfc-style
     kubectl
