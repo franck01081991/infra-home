@@ -60,7 +60,10 @@ jobs:
       - name: Install kustomize
         run: |
           set -euo pipefail
-          KUSTOMIZE_URL="https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          KUSTOMIZE_URL="https://github.com/kubernetes-sigs/kustomize/releases"
+          KUSTOMIZE_URL+="/download/"
+          KUSTOMIZE_URL+="kustomize%2Fv${KUSTOMIZE_VERSION}/"
+          KUSTOMIZE_URL+="kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
           curl -Lo kustomize.tar.gz "$KUSTOMIZE_URL"
           tar -xzvf kustomize.tar.gz
           sudo mv kustomize /usr/local/bin
@@ -147,7 +150,10 @@ jobs:
       - name: Install kustomize
         run: |
           set -euo pipefail
-          KUSTOMIZE_URL="https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          KUSTOMIZE_URL="https://github.com/kubernetes-sigs/kustomize/releases"
+          KUSTOMIZE_URL+="/download/"
+          KUSTOMIZE_URL+="kustomize%2Fv${KUSTOMIZE_VERSION}/"
+          KUSTOMIZE_URL+="kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
           curl -Lo kustomize.tar.gz "$KUSTOMIZE_URL"
           tar -xzvf kustomize.tar.gz
           sudo mv kustomize /usr/local/bin
@@ -155,8 +161,8 @@ jobs:
       - name: Install kube-linter
         run: |
           set -euo pipefail
-          KUBE_LINTER_URL="https://github.com/stackrox/kube-linter/releases/download/"
-          KUBE_LINTER_URL+="v${KUBE_LINTER_VERSION}/"
+          KUBE_LINTER_URL="https://github.com/stackrox/kube-linter/releases"
+          KUBE_LINTER_URL+="/download/v${KUBE_LINTER_VERSION}/"
           KUBE_LINTER_URL+="kube-linter-linux.tar.gz"
           curl -L "$KUBE_LINTER_URL" | tar -xz
           sudo mv kube-linter /usr/local/bin/

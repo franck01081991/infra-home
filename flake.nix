@@ -11,8 +11,7 @@
       system = "aarch64-linux";
       pkgs = import nixpkgs { inherit system; };
       phoneDevices = import ./phone/devices.nix;
-    in
-    {
+    in {
       nixosModules = {
         role-router = import ./modules/roles/router.nix;
         role-k3s-master-worker = import ./modules/roles/k3s-master-worker.nix;
