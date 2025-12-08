@@ -155,7 +155,8 @@ jobs:
       - name: Install kube-linter
         run: |
           set -euo pipefail
-          KUBE_LINTER_URL="https://github.com/stackrox/kube-linter/releases/download/v${KUBE_LINTER_VERSION}/kube-linter-linux.tar.gz"
+          KUBE_LINTER_URL="https://github.com/stackrox/kube-linter/releases/download/"\
+"v${KUBE_LINTER_VERSION}/kube-linter-linux.tar.gz"
           curl -L "$KUBE_LINTER_URL" | tar -xz
           sudo mv kube-linter /usr/local/bin/
 
