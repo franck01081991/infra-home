@@ -75,25 +75,10 @@ KUBE_LINTER_URL="https://github.com/stackrox/kube-linter/releases/download/v${KU
 Le fichier Nix n'était pas formaté selon le standard RFC attendu par le pipeline CI.
 
 **✅ Solution :**
-```nix
-# AVANT (format étendu avec ligne vide)
-{ pkgs }: pkgs.mkShell {
-  name = "infra-home";
 
-  packages = with pkgs; [
-    # liste des packages...
-  ];
-}
-
-# APRÈS (format compact sans ligne vide)
-{ pkgs }:
-pkgs.mkShell {
-  name = "infra-home";
-  packages = with pkgs; [
-    # liste des packages...
-  ];
-}
-```
+- Vérifier que `nix/devshell.nix` existe et reste formaté.
+- Lancer `nix fmt ./flake.nix` et `nix fmt ./nix/devshell.nix`.
+- Exécuter `nix run nixpkgs#nixpkgs-lint -- .` pour détecter les avertissements Nix.
 
 ### **4. Erreur "check not found" avec kube-linter**
 
@@ -161,10 +146,10 @@ checks:
 nix-shell -p nixfmt-rfc-style
 
 # Vérifier le formatage
-nixfmt --check nix/devshell.nix
+find . -name "*.nix" -print0 | xargs -0 nixfmt --check
 
 # Corriger automatiquement
-nixfmt nix/devshell.nix
+find . -name "*.nix" -print0 | xargs -0 nixfmt
 ```
 
 ### **Tester la validation YAML**

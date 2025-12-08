@@ -60,7 +60,10 @@ jobs:
       - name: Install kustomize
         run: |
           set -euo pipefail
-          KUSTOMIZE_URL="https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          KUSTOMIZE_URL="https://github.com/kubernetes-sigs/kustomize/releases"
+          KUSTOMIZE_URL+="/download/"
+          KUSTOMIZE_URL+="kustomize%2Fv${KUSTOMIZE_VERSION}/"
+          KUSTOMIZE_URL+="kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
           curl -Lo kustomize.tar.gz "$KUSTOMIZE_URL"
           tar -xzvf kustomize.tar.gz
           sudo mv kustomize /usr/local/bin
@@ -117,11 +120,8 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-24.05
 
-      - name: Install statix
-        run: nix profile install nixpkgs#statix
-
-      - name: Run statix (Nix linter)
-        run: statix check .
+      - name: Run nixpkgs-lint
+        run: nix run nixpkgs#nixpkgs-lint -- .
 
       - name: Check Nix formatting
         run: |
@@ -147,7 +147,10 @@ jobs:
       - name: Install kustomize
         run: |
           set -euo pipefail
-          KUSTOMIZE_URL="https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          KUSTOMIZE_URL="https://github.com/kubernetes-sigs/kustomize/releases"
+          KUSTOMIZE_URL+="/download/"
+          KUSTOMIZE_URL+="kustomize%2Fv${KUSTOMIZE_VERSION}/"
+          KUSTOMIZE_URL+="kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
           curl -Lo kustomize.tar.gz "$KUSTOMIZE_URL"
           tar -xzvf kustomize.tar.gz
           sudo mv kustomize /usr/local/bin
@@ -155,8 +158,9 @@ jobs:
       - name: Install kube-linter
         run: |
           set -euo pipefail
-          KUBE_LINTER_URL="https://github.com/stackrox/kube-linter/releases/download/"\
-"v${KUBE_LINTER_VERSION}/kube-linter-linux.tar.gz"
+          KUBE_LINTER_URL="https://github.com/stackrox/kube-linter/releases"
+          KUBE_LINTER_URL+="/download/v${KUBE_LINTER_VERSION}/"
+          KUBE_LINTER_URL+="kube-linter-linux.tar.gz"
           curl -L "$KUBE_LINTER_URL" | tar -xz
           sudo mv kube-linter /usr/local/bin/
 
@@ -167,7 +171,8 @@ jobs:
           # Créer un fichier de configuration kube-linter
           cat > .kube-linter.yaml << 'EOF'
           checks:
-            # Utiliser les checks par défaut mais exclure ceux problématiques pour un homelab
+            # Utiliser les checks par défaut
+            # et exclure ceux problématiques pour un homelab
             doNotAutoAddDefaults: false
             exclude:
               # Acceptable pour certains containers dans un homelab

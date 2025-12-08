@@ -57,8 +57,6 @@ helm version
 age --version
 ```
 
-> 💡 **Astuce** : Le devshell configure automatiquement les outils nécessaires. Pas besoin d'installation manuelle !
-
 ## 🖥️ Préparation et déploiement des hôtes NixOS
 
 ### Étape 1 : Installation NixOS de base

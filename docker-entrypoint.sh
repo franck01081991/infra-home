@@ -55,7 +55,7 @@ if [ "$#" -eq 0 ] || [ "$1" = "/bin/bash" ]; then
     echo ""
     echo "📚 Consultez docs/QUICKSTART.md pour plus d'informations"
     echo ""
-    
+
     # Entrer dans le devshell Nix
     exec nix develop --command bash
 else

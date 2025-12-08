@@ -111,7 +111,7 @@ infra-home/
 # Validation complète
 make test                           # tests de base (unit, lint, nix-check)
 make full-test                      # tests complets avec scans de sécurité
-make security-scan                  # scans de sécurité uniquement (kube-lint, trivy, nix-lint)
+make security-scan                  # scans de sécurité uniquement (kube-lint, trivy, nixpkgs-lint)
 make help                           # afficher toutes les commandes disponibles
 nix flake check                     # validation modules Nix
 
