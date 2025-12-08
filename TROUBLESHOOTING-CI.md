@@ -34,7 +34,37 @@ KUSTOMIZE_URL+="kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
 KUSTOMIZE_URL="https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
 ```
 
-### **2. Problème de formatage Nix**
+### **2. Erreur "not in gzip format" avec kube-linter**
+
+**🚨 Symptôme :**
+```
+gzip: stdin: not in gzip format
+tar: Child returned status 1
+tar: Error is not recoverable: exiting now
+```
+
+**🔍 Cause :**
+L'URL de téléchargement de kube-linter était incorrecte. Il manquait le préfixe "v" devant la version :
+```
+# INCORRECT
+https://github.com/stackrox/kube-linter/releases/download/0.7.6/kube-linter-linux.tar.gz
+
+# CORRECT
+https://github.com/stackrox/kube-linter/releases/download/v0.7.6/kube-linter-linux.tar.gz
+```
+
+**✅ Solution appliquée :**
+```yaml
+# AVANT (incorrect)
+KUBE_LINTER_URL="https://github.com/stackrox/kube-linter/releases"
+KUBE_LINTER_URL+="/download/${KUBE_LINTER_VERSION}/"
+KUBE_LINTER_URL+="kube-linter-linux.tar.gz"
+
+# APRÈS (correct)
+KUBE_LINTER_URL="https://github.com/stackrox/kube-linter/releases/download/v${KUBE_LINTER_VERSION}/kube-linter-linux.tar.gz"
+```
+
+### **3. Problème de formatage Nix**
 
 **🚨 Symptôme :**
 ```
@@ -45,7 +75,26 @@ KUSTOMIZE_URL="https://github.com/kubernetes-sigs/kustomize/releases/download/ku
 Le fichier Nix n'était pas formaté selon le standard RFC attendu par le pipeline CI.
 
 **✅ Solution :**
-Le fichier a été reformaté pour respecter le style nixfmt-rfc-style.
+```nix
+# AVANT (format étendu)
+{ pkgs }:
+pkgs.mkShell {
+  name = "infra-home";
+
+  packages = with pkgs; [
+    # liste des packages...
+  ];
+}
+
+# APRÈS (format compact)
+{ pkgs }: pkgs.mkShell {
+  name = "infra-home";
+
+  packages = with pkgs; [
+    # liste des packages...
+  ];
+}
+```
 
 ## 🛠️ **Comment diagnostiquer les problèmes CI**
 
