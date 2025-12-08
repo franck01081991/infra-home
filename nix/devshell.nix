@@ -1,5 +1,4 @@
-{ pkgs }:
-pkgs.mkShell {
+{ pkgs }: pkgs.mkShell {
   name = "infra-home";
 
   packages = with pkgs; [
