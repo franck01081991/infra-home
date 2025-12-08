@@ -78,6 +78,7 @@ Le fichier Nix n'était pas formaté selon le standard RFC attendu par le pipeli
 
 - Vérifier que `nix/devshell.nix` existe et reste formaté.
 - Lancer `nix fmt ./flake.nix` et `nix fmt ./nix/devshell.nix`.
+- Exécuter `nix run nixpkgs#nixpkgs-lint -- .` pour détecter les avertissements Nix.
 
 ### **4. Erreur "check not found" avec kube-linter**
 

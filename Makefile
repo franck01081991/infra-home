@@ -70,15 +70,15 @@ trivy-scan:
 		trivy config --severity HIGH,CRITICAL Dockerfile || true; \
 	fi
 
+
 # Linting Nix avec nixpkgs-lint
 nix-lint:
 	@echo "🔍 Analyse du code Nix avec nixpkgs-lint..."
-	@if ! command -v nixpkgs-lint >/dev/null 2>&1; then \
-		echo "❌ nixpkgs-lint non installé. Installez avec 'nix profile install nixpkgs#nixpkgs-lint'"; \
-		exit 1; \
+	@if ! command -v nix >/dev/null 2>&1; then \\
+		echo "❌ nix n'est pas installé. Installez Nix avec les flakes activés."; \\
+		exit 1; \\
 	fi
-	@nixpkgs-lint . || true
-
+	@nix run nixpkgs#nixpkgs-lint -- .
 # Formatage automatique du code Nix
 format-nix:
 	@echo "🎨 Formatage du code Nix..."
