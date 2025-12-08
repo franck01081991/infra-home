@@ -42,10 +42,6 @@ echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 git clone git@github.com:franck01081991/infra-home.git
 cd infra-home
 
-# Entrer dans le shell de développement
-nix develop
-# ✅ Fournit : kubectl, flux, helm, age, sops, kustomize, linters…
-
 # Validation de la configuration
 nix flake check      # valide modules, topologie, options NixOS
 make test            # lint + kubeconform + scans de sécurité
@@ -56,8 +52,6 @@ flux version --client
 helm version
 age --version
 ```
-
-> 💡 **Astuce** : Le devshell configure automatiquement les outils nécessaires. Pas besoin d'installation manuelle !
 
 ## 🖥️ Préparation et déploiement des hôtes NixOS
 

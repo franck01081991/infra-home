@@ -55,7 +55,7 @@ make render ENV=review && make deploy ENV=review
 
 ```
 infra-home/
-├── 📄 flake.nix                    # Point d'entrée Nix, devshell
+├── 📄 flake.nix                    # Point d'entrée Nix
 ├── 📁 nix/                         # Configuration Nix, packages
 ├── 📁 modules/                     # Modules NixOS réutilisables
 │   ├── router.nix                  # Configuration routeur (VLAN, NAT, nftables)
