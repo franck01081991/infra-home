@@ -1,16 +1,15 @@
 { pkgs }:
-
 pkgs.mkShell {
   name = "infra-home";
   packages = with pkgs; [
     age
     fluxcd
-    kustomize
     helm
     kubeconform
     kubectl
-    nixpkgs-lint
+    kustomize
     nixfmt-rfc-style
+    nixpkgs-lint
     shellcheck
     trufflehog
     yamllint
